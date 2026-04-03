@@ -46,6 +46,7 @@ def test_notifications():
         "channel": "email",
         "priority": "high",
         "message_body": "Hello {{name}}, your order has shipped!",
+        "template_vars": {"name": "Varshith"},
         "idempotency_key": f"key_{int(time.time())}"
     }
     print(f"[*] Dispatching Notification: {payload}")
@@ -78,6 +79,32 @@ def test_notifications():
     except requests.exceptions.RequestException as e:
         print(f"[-] Failed to fetch history: {e}")
 
+def test_background_worker():
+    print(f"\n--- Testing Step 4 & 5: Background Queue & Priority ---")
+    user_id = "user_123"
+
+    payload = {
+        "user_id": user_id,
+        "channel": "email",
+        "priority": "critical",
+        "message_body": "Priority dispatch test via Worker!",
+        "idempotency_key": f"key_worker_{int(time.time())}"
+    }
+
+    try:
+        res = requests.post(f"{BASE_URL}/notifications/", json=payload)
+        res.raise_for_status()
+        noti_id = res.json()["id"]
+        print(f"[*] Dispatching to worker... created ID: {noti_id} (Status: pending)")
+        
+        print("[*] Waiting 1 second for worker to process...")
+        time.sleep(1)
+        
+        chk = requests.get(f"{BASE_URL}/notifications/{noti_id}")
+        print(f"[+] Post-worker status verification: {chk.json()['status']}")
+    except requests.exceptions.RequestException as e:
+        print(f"[-] Failed background test: {e}")
+
 if __name__ == "__main__":
     print("Executing Live API Tests (Ensure server is running on port 8000)")
     try:
@@ -85,6 +112,7 @@ if __name__ == "__main__":
         print(f"Server health: {req.json()}")
         test_user_preferences()
         test_notifications()
+        test_background_worker()
     except requests.exceptions.ConnectionError:
         print("\n[ERROR] Server is not running! Please run: uvicorn app.main:app --reload")
 

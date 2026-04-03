@@ -11,8 +11,7 @@ class NotificationCreate(BaseModel):
     priority: NotificationPriority = NotificationPriority.NORMAL
     message_body: str
     idempotency_key: Optional[str] = None
-    
-    # template_vars: Optional[dict] = None
+    template_vars: Optional[dict] = None
 
 class NotificationResponse(BaseModel):
     id: int
@@ -22,9 +21,6 @@ class NotificationResponse(BaseModel):
     status: NotificationStatus
     message_body: str
     idempotency_key: Optional[str] = None
-    retry_count: int
-    error_message: Optional[str] = None
-    sent_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 

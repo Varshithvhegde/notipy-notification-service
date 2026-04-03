@@ -30,7 +30,7 @@ async def create_notification(noti: NotificationCreate, db: Session = Depends(ge
     db.refresh(db_noti)
     
 
-    await notification_queue.enqueue(db_noti.id, priority=db_noti.priority.value)
+    await notification_queue.enqueue(db_noti.id, priority=db_noti.priority.value, template_vars=noti.template_vars)
     
     return db_noti
 

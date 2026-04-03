@@ -17,9 +17,9 @@ class NotificationQueue:
         self._workers: list[asyncio.Task] = []
         self._running = False
 
-    async def enqueue(self, notification_id: int, priority: str = "normal"):
+    async def enqueue(self, notification_id: int, priority: str = "normal", template_vars: dict = None):
         prio_val = PRIORITY_MAP.get(priority.lower(), 2)
-        await self._queue.put((prio_val, notification_id))
+        await self._queue.put((prio_val, notification_id, template_vars))
 
     async def start(self, workers: int = 2):
         self._running = True
@@ -38,10 +38,10 @@ class NotificationQueue:
     async def _worker(self, worker_id: int):
         while self._running:
             try:
-                priority, notification_id = await asyncio.wait_for(
+                priority, notification_id, template_vars = await asyncio.wait_for(
                     self._queue.get(), timeout=1.0
                 )
-                await self._process(notification_id)
+                await self._process(notification_id, template_vars)
                 self._queue.task_done()
             except asyncio.TimeoutError:
                 continue
@@ -50,7 +50,15 @@ class NotificationQueue:
             except Exception as e:
                 print(f"Worker {worker_id} error: {e}")
 
-    async def _process(self, notification_id: int):
+    def _render_template(self, body: str, variables_dict: dict) -> str:
+        if not variables_dict or not body:
+            return body
+        result = body
+        for k, v in variables_dict.items():
+            result = result.replace(f"{{{{{k}}}}}", str(v))
+        return result
+
+    async def _process(self, notification_id: int, template_vars: dict):
         from app.db.database import SessionLocal
         from app.models.notification import Notification, NotificationStatus
         from app.models.user_preference import UserPreference
@@ -89,9 +97,11 @@ class NotificationQueue:
         
         try:
             provider = get_provider(channel)
+            rendered_body = self._render_template(notification.message_body, template_vars)
+            
             await provider.send(
                 user_id=notification.user_id,
-                body=notification.message_body,
+                body=rendered_body,
             )
 
             def mark_success():
