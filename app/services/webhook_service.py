@@ -55,7 +55,7 @@ async def fire_webhooks(notification_id: int, user_id: str, status: str, channel
                 sig = hmac.new(
                     hook.secret.encode(), body.encode(), hashlib.sha256
                 ).hexdigest()
-                headers["X-Klarixa-Signature"] = f"sha256={sig}"
+                headers["X-Notipy-Signature"] = f"sha256={sig}"
 
             try:
                 resp = await client.post(hook.url, content=body, headers=headers)

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   notification_service:
     build: .
-    container_name: klarixa_notification_service
+    container_name: notipy_notification_service
     ports:
       - "8000:8000"
     environment:
