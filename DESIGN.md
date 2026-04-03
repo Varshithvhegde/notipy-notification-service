@@ -1,32 +1,97 @@
-# System Architecture Design
+# Notipy | System Design Document
 
-## High-Level Architecture
-This Notification microservice assumes a strictly decoupled layout enforcing heavy background processing, separating API bottlenecks from external processing.
+**Notipy** is a high-throughput, asynchronous notification orchestration engine. This document outlines the architectural decisions, data models, and scaling strategies that make the system production-ready.
 
-1. **Gatekeeping API Controller**: FastAPI heavily guards traffic initially, resolving validations via strict Pydantic structures and blocking spam users via an inner-memory Sliding Window dictionary check. Any identical `idempotency_key` string instantly returns success avoiding database overhead. 
-2. **SQLite Database Interface**: SQLAlchemy wraps models natively routing payloads successfully storing them as safe `PENDING` transactions so messages are permanently shielded from application crashes.
-3. **Queue Consumers**: Python's `asyncio.PriorityQueue` hooks natively into the ASGI server lifespan. Worker nodes dynamically consume tasks pulling heavily toward `priority.value` hierarchies. 
+---
 
-## Schema Infrastructure Decisions
+## 1. High-Level Architecture
+
+The system follows a **Producer-Consumer** pattern with an internal, non-blocking task queue.
+
+```mermaid
+graph TD
+    A[Client UI/API] -->|POST /notifications| B[FastAPI Producer]
+    B -->|Validate & Deduplicate| C{Idempotency Check}
+    C -->|New| D[PostgreSQL/SQLite]
+    C -->|Exists| A
+    D -->|Persist PENDING| E[internal Asyncio Queue]
+    
+    subgraph Workers
+    E --> F[Worker 1: Priority High]
+    E --> G[Worker 2: Priority Low]
+    end
+    
+    F -->|Dispatch| H[Provider Strategy]
+    G -->|Dispatch| H
+    
+    H -->|Success| I[Webhook Service]
+    H -->|Fail & Retry| D
+    
+    I -->|POST Callback| J[External Subscriber]
+```
+
+### Core Components:
+1.  **FastAPI Producer**: Handles auth, validation, and database persistence.
+2.  **Internal Queue**: A thread-safe `asyncio.PriorityQueue` ensures that "Critical" notifications are processed before "Low" ones even during peak loads.
+3.  **Provider Strategy**: An abstraction layer that sanitizes channel-specific logic (Email/SMS/Push) without coupling it to the core engine.
+4.  **Webhook Dispatcher**: Fires events asynchronously to registered third-party listeners when delivery states change.
+
+---
+
+## 2. Database Schema
+
+The system uses **PostgreSQL (AsyncPG)** for persistence.
 
 ### `notifications` Table
-Stores raw communication states:
-- `user_id` mapped via upstream ID's instead of local relationship objects since this microservice strictly isolates from user management systems safely.
-- `priority` enum strings guaranteeing explicit data structuring.
-- Tracking analytics mapping attributes (`retry_count`, `error_message`, `sent_at`) capturing diagnostic telemetrics over time dynamically. 
+| Column | Type | Explanation |
+| :--- | :--- | :--- |
+| `id` | Integer (PK) | Unique internal ID. |
+| `user_id` | String | Identity node identifier. Indexing enabled for rapid history lookups. |
+| `channel` | Enum | `email`, `sms`, or `push`. |
+| `priority` | Enum | Determines position in the processing queue. |
+| `message_body` | Text | Rendered content after Jinja2 substitution. |
+| `status` | Enum | `pending` -> `sent` OR `failed`. |
+| `idempotency_key`| String | Prevents double-firing for identical incoming requests. |
+| `retry_count` | Integer | Tracks recovery attempts for transient provider failures. |
 
-### `user_preferences` Table
-Provides boolean toggle `is_opted_in` paths isolated by `user_id` and `channel`. Workers always filter explicitly through here mitigating angry clients who removed permission!
+### `notification_templates` Table
+Enables decoupled message management. Changes here reflect globally without application redeployment. Includes `name`, `subject`, and `body` (Jinja2 format).
 
-## Retry Mechanisms & Failure Resilience
-In distributed system setups, network components fail often. When an external channel provider throws an unhandled Exception, the queue system gracefully suppresses it:
-- The `attempt` internal cycle tracking number scales upward.
-- Calculates an absolute delay multiplier: `2 ^ attempt_count`.
-- Halts its execution thread asynchronously via `asyncio.sleep` to avoid blocking other workers.
-- Attempts delivery exactly up to 3 boundary limits before cleanly failing natively and updating database markers to `FAILED`.
+---
 
-## Scalability Map
-If the volume demands significantly over 1,000+ payload deliveries a second globally:
-- We simply scale the FastAPI app instances behind a standard layer 7 load balancer.
-- Internal `asyncio` priority queues natively decouple outward into `RabbitMQ` topics or `Redis Queue (RQ)`. This permits isolated clusters to uniquely consume high-priority loads separately from the API hardware logic entirely.
-- SQLite replaces rapidly via updating environment config strings globally to native PostgreSQL without altering a single structural `models/` file!
+## 3. Failure & Retry Handling
+
+Notipy assumes that downstream providers (Twilio/SendGrid) will occasionally fail.
+
+1.  **Exponential Backoff**: When a provider returns a 5xx or network error, the worker increments `retry_count`.
+2.  **State Persistence**: Before any retry, the state is persisted to the DB. If the server crashes, the `on_startup` routine sweeps the database for `PENDING` items and re-enqueues them.
+3.  **Dead Letter Logic**: After 3 (configurable) failed attempts, the status is marked as `FAILED`, and a Webhook event is fired with the error payload.
+
+---
+
+## 4. Scaling the System
+
+### Scaling the Workers
+While currently using an internal `asyncio.Queue`, the architecture is designed to transition to **Redis/RabbitMQ** via Celery or LiteStar for horizontal scaling. Multiple container instances can then pull from the same central broker.
+
+### Database Partitioning
+As notification volume grows into millions of rows, the `notifications` table would be **partitioned by `created_at`** (monthly partitions) to maintain index performance for recent telemetry lookups.
+
+### Rate Limiting
+The system implements **Sliding Window Rate Limiting** via a local memory store. In a distributed environment, this would move to **Redis (Fixed Window or Token Bucket)** to ensure global rate limits are respected across all API nodes.
+
+---
+
+## 5. Trade-offs & Rationale
+
+### Internal Queue vs. Redis
+*   **Trade-off**: Used an internal `asyncio.Queue` instead of Redis for the MVP.
+*   **Reason**: Lower operational complexity and zero external dependencies for local setup. The logic is encapsulated enough that swapping the producer/consumer logic for a Celery broker is a 1-day task.
+
+### Lazy User Model
+*   **Trade-off**: Notipy does not enforce a rigid "User Registry" (i.e., users can exist just as IDs).
+*   **Reason**: Maximum flexibility for integration. You don't have to sync your entire user database to Notipy before you start sending notifications. Preferences are handles via "Upsert on Edit" logic.
+
+### DateTime Timezones
+*   **Trade-off**: Standardized all timestamps to `TIMESTAMPTZ` (UTC).
+*   **Reason**: Resolves common data conflicts when deploying across different cloud regions (e.g., AWS us-east-1 vs India) while maintaining a consistent audit trail.

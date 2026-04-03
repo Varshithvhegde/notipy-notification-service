@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="Klarixa Notification Service",
+    title="Notipy Notification Service",
     description="Backend service for dispatching multi-channel notifications",
     version="1.0.0",
     lifespan=lifespan
