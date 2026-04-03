@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  notification_service:
+    build: .
+    container_name: klarixa_notification_service
+    ports:
+      - "8000:8000"
+    environment:
+      # These flags allow you to easily toggle out sqlite databases toward postgres globally right here!
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    volumes:
+      # Saves the sqlite database instances preventing data loss dynamically when standard containers wipe
+      - notification_data:/app/data
+
+volumes:
+  notification_data:
