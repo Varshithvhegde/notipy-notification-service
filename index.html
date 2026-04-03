@@ -1,694 +1,1160 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klarixa | AI Notification Engine</title>
-    <!-- Premium Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --secondary: #ec4899;
-            --dark: #0f172a;
-            --darkER: #020617;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notipy — Notification Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #17171f;
+    --surface3: #1e1e28;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.14);
+    --text: #f0f0f5;
+    --muted: #7a7a90;
+    --subtle: #3a3a50;
+    --accent: #7c6af7;
+    --accent-light: rgba(124,106,247,0.15);
+    --accent-glow: rgba(124,106,247,0.25);
+    --green: #34d399;
+    --green-bg: rgba(52,211,153,0.12);
+    --amber: #fbbf24;
+    --amber-bg: rgba(251,191,36,0.12);
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.12);
+    --r: 10px;
+    --r-lg: 16px;
+  }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            background-color: var(--darkER);
-            color: var(--text);
-            min-height: 100vh;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
-            padding: 2rem 1rem;
-        }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
 
-        h1,
-        h2,
-        h3 {
-            font-family: 'Outfit', sans-serif;
-        }
+  /* Layout */
+  .shell { display: flex; min-height: 100vh; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
 
-        header {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
 
-        .badge {
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary);
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            display: inline-block;
-            margin-bottom: 1rem;
-        }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
-        header h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #fff, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--subtle);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    padding: 0 8px;
+  }
 
-        header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto;
-        }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--r);
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-color: rgba(124,106,247,0.2);
+  }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
+  .nav-sep { height: 1px; background: var(--border); margin: 16px 0; }
 
-        .card:hover {
-            border-color: rgba(99, 102, 241, 0.5);
-            transform: translateY(-5px);
-            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.2);
-        }
+  /* Main */
+  .main { flex: 1; overflow-y: auto; padding: 32px; max-width: calc(100vw - 220px); }
 
-        .card h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+  /* Page sections */
+  .page { display: none; }
+  .page.active { display: block; }
 
-        .card .desc {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
+  /* Page header */
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
 
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.8rem 1rem;
-            color: var(--text);
-            font-size: 0.95rem;
-            outline: none;
-            transition: all 0.2s;
-        }
+  /* Form */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-        input:focus {
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    resize: vertical;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    background: var(--surface3);
+  }
+  select option { background: var(--surface3); }
+  select[multiple] { height: 90px; padding: 6px; }
 
-        .row {
-            display: flex;
-            gap: 1rem;
-        }
+  .row { display: flex; gap: 12px; }
+  .row > .field { flex: 1; }
 
-        button {
-            width: 100%;
-            padding: 1rem;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
-            color: white;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-        }
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: var(--r);
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--border-hover); background: var(--surface3); }
+  .btn-danger {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,0.2);
+  }
+  .btn-danger:hover { background: rgba(248,113,113,0.2); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btn-full { width: 100%; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
-        button:hover {
-            transform: scale(1.02);
-            filter: brightness(1.1);
-            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
-        }
+  /* Pills / badges */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .pill::before { content: '●'; font-size: 8px; }
+  .pill-sent { background: var(--green-bg); color: var(--green); }
+  .pill-pending { background: var(--amber-bg); color: var(--amber); }
+  .pill-failed { background: var(--red-bg); color: var(--red); }
+  .pill-delivered { background: var(--blue-bg); color: var(--blue); }
 
-        button.secondary {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            box-shadow: none;
-        }
+  /* Table */
+  .table-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
+  .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
 
-        /* Table Styles */
-        .table-container {
-            margin-top: 1rem;
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: rgba(0, 0, 0, 0.2);
-        }
+  /* Channel chips */
+  .ch-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-right: 4px;
+  }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.85rem;
-        }
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
-        th {
-            background: var(--glass);
-            padding: 1rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
+  /* Toggle switches */
+  .toggle-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row label { flex: 1; font-size: 13.5px; color: var(--text); }
+  .toggle-row small { color: var(--muted); font-size: 12px; }
+  .switch { position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    transition: 0.2s;
+  }
+  .slider:before {
+    position: absolute;
+    content: '';
+    height: 15px; width: 15px;
+    left: 3px; bottom: 2px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + .slider:before { transform: translateX(16px); background: #fff; }
 
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
+  /* Priority indicator */
+  .pri { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  .pri-critical { background: var(--red); }
+  .pri-high { background: var(--amber); }
+  .pri-normal { background: var(--green); }
+  .pri-low { background: var(--blue); }
 
-        tr:last-child td {
-            border-bottom: none;
-        }
+  /* Template vars */
+  .var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 
-        .pill {
-            padding: 0.3rem 0.7rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+  /* Empty state */
+  .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 28px; margin-bottom: 10px; }
 
-        .pill.pending {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 12px 20px;
+    border-radius: var(--r);
+    font-size: 13.5px;
+    font-weight: 500;
+    display: none;
+    z-index: 9999;
+    animation: slide-up 0.2s ease;
+    max-width: 360px;
+    backdrop-filter: blur(10px);
+  }
+  .toast-ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+  .toast-err { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
 
-        .pill.sent {
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--success);
-        }
+  @keyframes slide-up { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .pill.failed {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-        }
+  /* Pagination */
+  .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .pagination-info { font-size: 12px; color: var(--muted); }
+  .pagination-btns { display: flex; gap: 6px; }
 
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--primary);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 1000;
-            animation: slideUp 0.3s ease;
-        }
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-                opacity: 0;
-            }
+  /* Inline hint */
+  .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
+  /* Webhook badge */
+  .active-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  .active-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .active-dot.off { background: var(--subtle); }
 
-        /* Custom Checkbox styles for Webhooks */
-        .checkbox-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-        }
-    </style>
+  /* Tpl vars hidden area */
+  .tpl-vars-box {
+    background: var(--surface2);
+    border: 1px dashed var(--border-hover);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .tpl-vars-box .tpl-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .sidebar { width: 200px; }
+  }
+  @media (max-width: 640px) {
+    .shell { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 12px; }
+    .logo-sub, .nav-label, .nav-sep { display: none; }
+    .main { max-width: 100%; padding: 16px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
 </head>
-
 <body>
 
-    <div class="container">
-        <header>
-            <div class="badge">Enterprise Ready</div>
-            <h1>Notification as a Service</h1>
-            <p>The state-of-the-art notification infrastructure for modern applications. Seamlessly orchestrate Email,
-                SMS, and Push with built-in intelligence.</p>
-        </header>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Noti<span>py</span></div>
+    <div class="logo-sub">Notification Engine</div>
 
-        <div class="grid">
-
-            <!-- Send Notification -->
-            <div class="card">
-                <h2>Dispatch Hub</h2>
-                <p class="desc">Create and route multi-channel notifications with priority weighting and advanced
-                    templating.</p>
-
-                <div class="form-group">
-                    <label>Identity Node (User ID)</label>
-                    <input type="text" id="user_id" value="user_web_123">
-                </div>
-
-                <div class="form-group">
-                    <label>Delivery Protocols</label>
-                    <select id="channels" multiple style="height: 80px;">
-                        <option value="email" selected>EMAIL</option>
-                        <option value="sms">SMS (Twilio)</option>
-                        <option value="push">MOBILE PUSH</option>
-                    </select>
-                    <small style="color:var(--text-muted); font-size:0.7rem; margin-top:5px; display:block;">Hold
-                        Ctrl/Cmd to select multiple</small>
-                </div>
-
-                <div class="row">
-                    <div class="form-group">
-                        <label>Payload Priority</label>
-                        <select id="priority">
-                            <option value="critical">CRITICAL</option>
-                            <option value="normal" selected>NORMAL</option>
-                            <option value="low">LOW</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Idempotency Key</label>
-                        <input type="text" id="idem_key" placeholder="auto-gen if empty">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Message Content (supports {{name}} template)</label>
-                    <textarea id="msg_body" rows="3"
-                        placeholder="Hello {{name}}, your order is ready!">Hello world from Klarixa!</textarea>
-                </div>
-
-                <button onclick="sendNotification()">Broadcast Event</button>
-            </div>
-
-            <!-- User Preferences -->
-            <div class="card">
-                <h2>Identity Config</h2>
-                <p class="desc">Manage opt-out registers and channel mapping for specific identity nodes in the
-                    database.</p>
-
-                <div class="form-group">
-                    <label>Identity Node</label>
-                    <input type="text" id="pref-user-id" value="user_web_123">
-                </div>
-
-                <div class="form-group">
-                    <label>Active Channels</label>
-                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="pref-email" checked> Email
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="pref-sms" checked> SMS
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="pref-push" checked> Push
-                        </label>
-                    </div>
-                </div>
-
-                <button class="secondary" onclick="updatePreferences()">Synchronize Preferences</button>
-            </div>
-
-            <!-- Live History Telemetry -->
-            <div class="card">
-                <h2>Telemetry Tracker Grid</h2>
-                <p class="desc">Monitor the absolute state of every notification task dispatched natively for an ID.</p>
-
-                <div class="row" style="align-items: flex-end; margin-bottom: 1rem;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <input type="text" id="hist-user-id" value="user_web_123" placeholder="Target User ID">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0; flex: 0 0 80px;">
-                        <label>Page Size</label>
-                        <select id="hist-page-size">
-                            <option value="5">5</option>
-                            <option value="10" selected>10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
-                    <button style="width: auto; padding: 0.8rem 1.5rem;" onclick="fetchHistory(1)">Poll Stream</button>
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>PK ID</th>
-                                <th>Channel</th>
-                                <th>Pri</th>
-                                <th>Internal State</th>
-                                <th>Rendered Output Body</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: var(--text-muted);">Hit Poll to sync
-                                    telemetry.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination Controls -->
-                <div id="pagination-controls"
-                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; display: none;">
-                    <span id="pagination-info" style="color: var(--text-muted); font-size: 0.9rem;"></span>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button id="btn-prev" style="width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;"
-                            class="secondary" onclick="changePage(-1)">← Prev</button>
-                        <button id="btn-next" style="width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;"
-                            class="secondary" onclick="changePage(1)">Next →</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Webhook Management Panel -->
-            <div class="card">
-                <h2>Integrations (Webhooks)</h2>
-                <p class="desc">Register dynamic HTTP endpoints to receive status callbacks for your notifications.</p>
-
-                <div class="form-group">
-                    <label>Webhook URL</label>
-                    <input type="text" id="webhook-url" placeholder="https://your-api.com/webhooks/klarixa">
-                </div>
-
-                <div class="row">
-                    <div class="form-group">
-                        <label>Target User ID (Optional)</label>
-                        <input type="text" id="webhook-user-id" placeholder="All users">
-                    </div>
-                    <div class="form-group">
-                        <label>HMAC Secret (Optional)</label>
-                        <input type="password" id="webhook-secret" placeholder="••••••••">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Events to Subscribe</label>
-                    <div class="checkbox-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="event-sent" checked> SENT
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="event-failed" checked> FAILED
-                        </label>
-                    </div>
-                </div>
-
-                <button onclick="registerWebhook()">Register Endpoint</button>
-
-                <div class="table-container" style="margin-top: 2rem;">
-                    <h3>Active Endpoints</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>URL</th>
-                                <th>Target</th>
-                                <th>Events</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="webhook-list-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: var(--text-muted);">Syncing
-                                    registry...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
+    <div class="nav-label">Core</div>
+    <div class="nav-item active" onclick="showPage('dispatch')">
+      <span class="nav-icon">◎</span> Dispatch
+    </div>
+    <div class="nav-item" onclick="showPage('history')">
+      <span class="nav-icon">≡</span> History
     </div>
 
-    <div id="toast" class="toast">Action completed successfully</div>
+    <div class="nav-sep"></div>
+    <div class="nav-label">Config</div>
+    <div class="nav-item" onclick="showPage('templates')">
+      <span class="nav-icon">⊞</span> Templates
+    </div>
+    <div class="nav-item" onclick="showPage('preferences')">
+      <span class="nav-icon">⊙</span> Preferences
+    </div>
+    <div class="nav-item" onclick="showPage('webhooks')">
+      <span class="nav-icon">⇋</span> Webhooks
+    </div>
+  </nav>
 
-    <script>
-        const API_BASE = "http://127.0.0.1:8000"; // Point to backend server 
+  <!-- Main Content -->
+  <main class="main">
 
-        function showToast(msg, isError = false) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.style.background = isError ? 'var(--danger)' : 'var(--primary)';
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
+    <!-- ═══ DISPATCH PAGE ═══ -->
+    <div class="page active" id="page-dispatch">
+      <div class="page-header">
+        <h1>Dispatch</h1>
+        <p>Send notifications across email, SMS, and push channels</p>
+      </div>
 
-        async function apiCall(url, method = 'GET', body = null) {
-            const options = {
-                method,
-                headers: { 'Content-Type': 'application/json' }
-            };
-            if (body) options.body = JSON.stringify(body);
+      <div class="grid-2" style="align-items: start;">
+        <!-- Left: Compose -->
+        <div class="card">
+          <div class="card-title">Compose Notification</div>
 
-            const res = await fetch(url, options);
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'API failure');
-            }
-            if (res.status === 204) return null;
-            return res.json();
-        }
+          <div class="field">
+            <label>User ID</label>
+            <input type="text" id="d-user-id" value="user_web_123" placeholder="e.g. user_web_123">
+          </div>
 
-        /* ----- ACTION: Send Notification ----- */
-        async function sendNotification() {
-            try {
-                const channels = Array.from(document.getElementById('channels').selectedOptions).map(o => o.value);
-                const payload = {
-                    user_id: document.getElementById('user_id').value,
-                    channels: channels,
-                    priority: document.getElementById('priority').value,
-                    message_body: document.getElementById('msg_body').value,
-                    template_vars: { name: "User" }
-                };
+          <div class="row">
+            <div class="field">
+              <label>Channels</label>
+              <select id="d-channels" multiple>
+                <option value="email" selected>Email</option>
+                <option value="sms">SMS</option>
+                <option value="push">Push</option>
+              </select>
+              <div class="hint">Ctrl/Cmd+click to multi-select</div>
+            </div>
+            <div class="field">
+              <label>Priority</label>
+              <select id="d-priority">
+                <option value="critical">🔴 Critical</option>
+                <option value="high">🟡 High</option>
+                <option value="normal" selected>🟢 Normal</option>
+                <option value="low">🔵 Low</option>
+              </select>
+            </div>
+          </div>
 
-                const idem = document.getElementById('idem_key').value;
-                if (idem) payload.idempotency_key = idem;
+          <div class="field">
+            <label>Template (optional)</label>
+            <select id="d-template" onchange="handleTplChange()">
+              <option value="">— Manual Message —</option>
+            </select>
+          </div>
 
-                const data = await apiCall(`${API_BASE}/notifications/`, 'POST', payload);
-                showToast('Event Broadcasted Successfully!');
-                fetchHistory(1);
-            } catch (error) {
-                showToast(error.message, true);
-            }
-        }
+          <!-- Template variable inputs -->
+          <div class="tpl-vars-box" id="d-tpl-vars-box">
+            <div class="tpl-label">Template Variables</div>
+            <div class="var-grid" id="d-vars-grid"></div>
+          </div>
 
-        /* ----- ACTION: Update Preferences ----- */
-        async function updatePreferences() {
-            try {
-                const userId = document.getElementById('pref-user-id').value;
-                const payload = {
-                    user_id: userId,
-                    email_enabled: document.getElementById('pref-email').checked,
-                    sms_enabled: document.getElementById('pref-sms').checked,
-                    push_enabled: document.getElementById('pref-push').checked,
-                };
-                await apiCall(`${API_BASE}/users/preferences`, 'POST', payload);
-                showToast('Identity Preferences Synchronized');
-            } catch (error) {
-                showToast(error.message, true);
-            }
-        }
+          <!-- Manual body -->
+          <div class="field" id="d-manual-field">
+            <label>Message Body</label>
+            <textarea id="d-body" rows="3" placeholder="Hello {{name}}, your order is ready!">Hello world from Notipy!</textarea>
+          </div>
 
-        let _currentPage = 1;
+          <div class="field">
+            <label>Idempotency Key <span style="color:var(--subtle); font-weight:400;">(optional)</span></label>
+            <input type="text" id="d-idem" placeholder="Auto-generated if empty">
+          </div>
 
-        function changePage(delta) {
-            _currentPage += delta;
-            fetchHistory(_currentPage);
-        }
+          <button class="btn btn-primary btn-full" onclick="sendNotification()">
+            <span>◎</span> Broadcast Notification
+          </button>
+        </div>
 
-        /* ----- ACTION: Refresh Telemetry ----- */
-        async function fetchHistory(page = 1) {
-            _currentPage = page;
-            const tbody = document.getElementById('history-body');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Syncing...</td></tr>';
+        <!-- Right: Quick info -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="card">
+            <div class="card-title">Channel Guide</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--accent-light); border: 1px solid rgba(124,106,247,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;">✉</div>
+                <div>
+                  <div style="font-weight: 500; font-size: 13px;">Email</div>
+                  <div style="font-size: 12px; color: var(--muted);">Supports subjects, HTML body via templates. Best for transactional messages.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--green-bg); border: 1px solid rgba(52,211,153,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;">📱</div>
+                <div>
+                  <div style="font-weight: 500; font-size: 13px;">SMS (Twilio)</div>
+                  <div style="font-size: 12px; color: var(--muted);">Plain text only. 160 char limit. Mocked provider in this build.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--amber-bg); border: 1px solid rgba(251,191,36,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;">🔔</div>
+                <div>
+                  <div style="font-weight: 500; font-size: 13px;">Push</div>
+                  <div style="font-size: 12px; color: var(--muted);">Mobile push via FCM. Mocked provider. Respects user device tokens.</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            try {
-                const userId = document.getElementById('hist-user-id').value;
-                const pageSize = document.getElementById('hist-page-size').value;
-                const data = await apiCall(`${API_BASE}/notifications/user/${userId}?page=${page}&page_size=${pageSize}`);
+          <div class="card">
+            <div class="card-title">Priority Levels</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="pri pri-critical"></span>
+                <span style="font-size: 13px; flex: 1;">Critical</span>
+                <span style="font-size: 12px; color: var(--muted);">Immediate dispatch, no queue delay</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="pri pri-high"></span>
+                <span style="font-size: 13px; flex: 1;">High</span>
+                <span style="font-size: 12px; color: var(--muted);">Processed before normal/low</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="pri pri-normal"></span>
+                <span style="font-size: 13px; flex: 1;">Normal</span>
+                <span style="font-size: 12px; color: var(--muted);">Standard queue processing</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="pri pri-low"></span>
+                <span style="font-size: 13px; flex: 1;">Low</span>
+                <span style="font-size: 12px; color: var(--muted);">Batched, lower urgency</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                if (data.total === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No records mapped to this Identity node.</td></tr>';
-                    document.getElementById('pagination-controls').style.display = 'none';
-                    return;
-                }
+    <!-- ═══ HISTORY PAGE ═══ -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <h1>Notification History</h1>
+        <p>Track delivery telemetry for any user</p>
+      </div>
 
-                tbody.innerHTML = '';
-                data.items.forEach(item => {
-                    const tr = document.createElement('tr');
-                    const statClass = item.status.toLowerCase();
-                    const statusHTML = `<span class="pill ${statClass}">${item.status}</span>`;
+      <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div class="field" style="flex: 1; margin-bottom: 0;">
+            <label>User ID</label>
+            <input type="text" id="h-user-id" value="user_web_123" placeholder="User ID to query">
+          </div>
+          <div class="field" style="flex: 0 0 100px; margin-bottom: 0;">
+            <label>Page Size</label>
+            <select id="h-page-size">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="fetchHistory(1)">Poll</button>
+        </div>
+      </div>
 
-                    let extra = "";
-                    if (item.error_message) extra = `<div style="color:var(--danger); font-size:0.8rem; margin-top:4px;">Error: ${item.error_message}</div>`;
-                    if (item.retry_count > 0) extra += `<div style="color:var(--warning); font-size:0.8rem;">Retries: ${item.retry_count}</div>`;
+      <div class="card">
+        <div class="card-title">Delivery Telemetry</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Channel</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Message</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="h-tbody">
+              <tr><td colspan="6" class="empty">
+                <div class="empty-icon">≡</div>
+                Click Poll to load records
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="h-pagination" style="display:none;">
+          <span class="pagination-info" id="h-pag-info"></span>
+          <div class="pagination-btns">
+            <button class="btn btn-secondary btn-sm" id="h-prev" onclick="changePage(-1)">← Prev</button>
+            <button class="btn btn-secondary btn-sm" id="h-next" onclick="changePage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                    tr.innerHTML = `
-                        <td style="font-weight: bold; color: var(--primary);">#${item.id}</td>
-                        <td>${item.channel.toUpperCase()}</td>
-                        <td style="font-size: 0.9rem;">${item.priority.toUpperCase()}</td>
-                        <td>${statusHTML}${extra}</td>
-                        <td style="font-family: inherit; font-size: 0.9rem;">${item.message_body}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+    <!-- ═══ TEMPLATES PAGE ═══ -->
+    <div class="page" id="page-templates">
+      <div class="page-header">
+        <h1>Templates</h1>
+        <p>Reusable Jinja2 message templates with variable substitution</p>
+      </div>
 
-                // Pagination
-                const controls = document.getElementById('pagination-controls');
-                controls.style.display = 'flex';
-                document.getElementById('pagination-info').textContent =
-                    `Page ${data.page} of ${data.total_pages} · ${data.total} total`;
-                document.getElementById('btn-prev').disabled = !data.has_prev;
-                document.getElementById('btn-next').disabled = !data.has_next;
+      <div class="grid-2" style="align-items: start;">
+        <!-- Create template -->
+        <div class="card">
+          <div class="card-title">New Template</div>
+          <div class="field">
+            <label>Template Name</label>
+            <input type="text" id="t-name" placeholder="e.g. welcome_email">
+            <div class="hint">Lowercase, underscores only. Used as identifier.</div>
+          </div>
+          <div class="field">
+            <label>Subject (email only)</label>
+            <input type="text" id="t-subject" placeholder="Welcome to Notipy!">
+          </div>
+          <div class="field">
+            <label>Body (Jinja2 syntax)</label>
+            <textarea id="t-body" rows="5" placeholder="Hello {{name}}! Your order {{order_id}} has shipped."></textarea>
+            <div class="hint">Use {{variable_name}} for dynamic values.</div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="registerTemplate()">Register Template</button>
+        </div>
 
-            } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Error: ${error.message}</td></tr>`;
-            }
-        }
+        <!-- Template list -->
+        <div class="card">
+          <div class="card-title">Registered Templates</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Subject</th>
+                  <th>Variables</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="t-tbody">
+                <tr><td colspan="4" class="empty">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        /* ----- ACTION: Webhook Management ----- */
-        async function fetchWebhooks() {
-            const tbody = document.getElementById('webhook-list-body');
-            try {
-                const data = await apiCall(`${API_BASE}/webhooks/`);
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No webhooks registered.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = '';
-                data.forEach(h => {
-                    const tr = document.createElement('tr');
-                    const statusLabel = h.is_active ?
-                        '<span style="color:var(--success)">● Active</span>' :
-                        '<span style="color:var(--text-muted)">○ Paused</span>';
+    <!-- ═══ PREFERENCES PAGE ═══ -->
+    <div class="page" id="page-preferences">
+      <div class="page-header">
+        <h1>User Preferences</h1>
+        <p>Manage channel opt-in / opt-out per identity node</p>
+      </div>
 
-                    tr.innerHTML = `
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${h.url}</td>
-                        <td>${h.user_id || 'Global'}</td>
-                        <td>${h.events.toUpperCase()}</td>
-                        <td>${statusLabel}</td>
-                        <td>
-                            <div style="display:flex; gap: 0.5rem;">
-                                <button style="padding: 0.3rem 0.5rem; font-size: 0.7rem;" class="secondary" onclick="toggleWebhook(${h.id})">Toggle</button>
-                                <button style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: var(--danger);" onclick="deleteWebhook(${h.id})">Del</button>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5">Error loading webhooks</td></tr>`;
-            }
-        }
+      <div class="grid-2" style="align-items: start;">
+        <div class="card">
+          <div class="card-title">Identity Config</div>
+          <div class="field">
+            <label>User ID</label>
+            <input type="text" id="p-user-id" value="user_web_123">
+          </div>
+          <button class="btn btn-secondary btn-full" onclick="loadPreferences()" style="margin-bottom: 20px;">Load Preferences</button>
 
-        async function registerWebhook() {
-            try {
-                const events = [];
-                if (document.getElementById('event-sent').checked) events.push('sent');
-                if (document.getElementById('event-failed').checked) events.push('failed');
+          <div class="divider"></div>
 
-                const payload = {
-                    url: document.getElementById('webhook-url').value,
-                    events: events,
-                    user_id: document.getElementById('webhook-user-id').value || null,
-                    secret: document.getElementById('webhook-secret').value || null
-                };
+          <div class="toggle-row">
+            <div>
+              <label style="font-weight: 500;">Email</label>
+              <small>Transactional & marketing emails</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="p-email" checked><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <label style="font-weight: 500;">SMS</label>
+              <small>Text messages via Twilio</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="p-sms" checked><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <label style="font-weight: 500;">Push</label>
+              <small>Mobile push notifications</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="p-push" checked><span class="slider"></span></label>
+          </div>
 
-                if (!payload.url) throw new Error("URL is required");
+          <div class="divider"></div>
+          <button class="btn btn-primary btn-full" onclick="updatePreferences()">Save Preferences</button>
+        </div>
 
-                await apiCall(`${API_BASE}/webhooks/`, 'POST', payload);
-                showToast('Webhook Registered Successfully');
-                fetchWebhooks();
-            } catch (error) {
-                showToast(error.message, true);
-            }
-        }
+        <div class="card">
+          <div class="card-title">About Preferences</div>
+          <div style="color: var(--muted); font-size: 13px; line-height: 1.8;">
+            <p style="margin-bottom: 12px;">User preferences let individuals opt out of specific delivery channels. The service respects these flags before dispatching any notification.</p>
+            <p style="margin-bottom: 12px;">If a channel is disabled and a notification targets that channel, it will be silently skipped rather than queued.</p>
+            <div style="background: var(--surface2); border-radius: var(--r); padding: 12px; border: 1px solid var(--border); margin-top: 8px;">
+              <div style="font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">API Endpoint</div>
+              <code style="font-size: 12px; color: var(--text);">POST /users/:userId/preferences-bulk</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        async function toggleWebhook(id) {
-            await apiCall(`${API_BASE}/webhooks/${id}/toggle`, 'PATCH');
-            fetchWebhooks();
-        }
+    <!-- ═══ WEBHOOKS PAGE ═══ -->
+    <div class="page" id="page-webhooks">
+      <div class="page-header">
+        <h1>Webhooks</h1>
+        <p>Register endpoints to receive delivery status callbacks</p>
+      </div>
 
-        async function deleteWebhook(id) {
-            if (confirm("Delete this webhook integration?")) {
-                await apiCall(`${API_BASE}/webhooks/${id}`, 'DELETE');
-                fetchWebhooks();
-            }
-        }
+      <div class="grid-2" style="align-items: start; margin-bottom: 24px;">
+        <div class="card">
+          <div class="card-title">Register Endpoint</div>
+          <div class="field">
+            <label>Webhook URL</label>
+            <input type="text" id="w-url" placeholder="https://your-api.com/webhooks/Notipy">
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Target User <span style="color:var(--subtle); font-weight:400;">(optional)</span></label>
+              <input type="text" id="w-user-id" placeholder="All users if empty">
+            </div>
+            <div class="field">
+              <label>HMAC Secret <span style="color:var(--subtle); font-weight:400;">(optional)</span></label>
+              <input type="password" id="w-secret" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="field">
+            <label>Event Subscriptions</label>
+            <div style="display: flex; gap: 16px; margin-top: 8px;">
+              <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px;">
+                <input type="checkbox" id="w-sent" checked> <span>SENT</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px;">
+                <input type="checkbox" id="w-failed" checked> <span>FAILED</span>
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="registerWebhook()">Register Endpoint</button>
+        </div>
 
-        // Initial Load
-        fetchWebhooks();
-    </script>
+        <div class="card">
+          <div class="card-title">How Webhooks Work</div>
+          <div style="color: var(--muted); font-size: 13px; line-height: 1.8;">
+            <p style="margin-bottom: 12px;">When a notification reaches a terminal state (SENT or FAILED), Notipy fires an HTTP POST to your registered endpoint.</p>
+            <p style="margin-bottom: 12px;">If a secret is set, the request includes an <code style="font-size: 12px; color: var(--text);">X-Notipy-Signature</code> header for HMAC-SHA256 verification.</p>
+            <div style="background: var(--surface2); border-radius: var(--r); padding: 12px; border: 1px solid var(--border);">
+              <div style="font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Payload Shape</div>
+              <pre style="font-size: 11.5px; color: var(--text); line-height: 1.7; white-space: pre-wrap;">{
+  "event": "sent",
+  "notification_id": 42,
+  "user_id": "user_web_123",
+  "channel": "email",
+  "timestamp": "2024-01-01T00:00:00Z"
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active webhooks list -->
+      <div class="card">
+        <div class="card-title">Active Endpoints</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Endpoint URL</th>
+                <th>Target</th>
+                <th>Events</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="w-tbody">
+              <tr><td colspan="5" class="empty">Loading webhooks...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  const API = "http://127.0.0.1:8000";
+  let _templates = [];
+  let _currentPage = 1;
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick')?.includes(name)) n.classList.add('active');
+    });
+    if (name === 'history') fetchHistory(1);
+    if (name === 'templates') fetchTemplates();
+    if (name === 'webhooks') fetchWebhooks();
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  function toast(msg, err = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = err ? 'toast-err' : 'toast-ok';
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3500);
+  }
+
+  // ── API helper ───────────────────────────────────────────────────────────────
+  async function api(url, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(e.detail || 'API Error');
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  // ── Dispatch ─────────────────────────────────────────────────────────────────
+  let _tplData = [];
+
+  function handleTplChange() {
+    const val = document.getElementById('d-template').value;
+    const manual = document.getElementById('d-manual-field');
+    const box = document.getElementById('d-tpl-vars-box');
+    const grid = document.getElementById('d-vars-grid');
+
+    if (!val) {
+      manual.style.display = 'block';
+      box.style.display = 'none';
+      return;
+    }
+
+    manual.style.display = 'none';
+    box.style.display = 'block';
+
+    const tpl = _templates.find(t => t.name === val);
+    if (tpl) {
+      const re = /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
+      const vars = new Set();
+      let m;
+      while ((m = re.exec(tpl.body)) !== null) vars.add(m[1]);
+      grid.innerHTML = '';
+      if (vars.size === 0) {
+        grid.innerHTML = '<span style="color:var(--muted); font-size:12px;">No variables in this template.</span>';
+      } else {
+        vars.forEach(v => {
+          const d = document.createElement('div');
+          d.innerHTML = `<label style="font-size:11px;color:var(--muted);margin-bottom:4px;display:block;">${v.toUpperCase()}</label><input class="tpl-var" data-key="${v}" type="text" placeholder="${v}">`;
+          grid.appendChild(d);
+        });
+      }
+    }
+  }
+
+  async function sendNotification() {
+    const btn = event.target;
+    btn.disabled = true;
+    try {
+      const channels = Array.from(document.getElementById('d-channels').selectedOptions).map(o => o.value);
+      const tplName = document.getElementById('d-template').value;
+      const tvars = {};
+      document.querySelectorAll('.tpl-var').forEach(i => tvars[i.getAttribute('data-key')] = i.value);
+
+      const payload = {
+        user_id: document.getElementById('d-user-id').value.trim(),
+        channels,
+        priority: document.getElementById('d-priority').value,
+        template_vars: tvars
+      };
+
+      if (tplName) {
+        payload.template_name = tplName;
+      } else {
+        payload.message_body = document.getElementById('d-body').value;
+        if (!Object.keys(tvars).length) payload.template_vars = { name: 'User' };
+      }
+
+      const idem = document.getElementById('d-idem').value.trim();
+      if (idem) payload.idempotency_key = idem;
+
+      await api(`${API}/notifications/`, 'POST', payload);
+      toast('Notification dispatched successfully!');
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── History ──────────────────────────────────────────────────────────────────
+  async function fetchHistory(page = 1) {
+    _currentPage = page;
+    const tbody = document.getElementById('h-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading...</td></tr>';
+
+    try {
+      const uid = document.getElementById('h-user-id').value.trim();
+      const ps = document.getElementById('h-page-size').value;
+      const data = await api(`${API}/notifications/user/${uid}?page=${page}&page_size=${ps}`);
+
+      if (data.total === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="empty-icon">◎</div>No records for this user.</td></tr>';
+        document.getElementById('h-pagination').style.display = 'none';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      data.items.forEach(item => {
+        const sc = item.status.toLowerCase();
+        const priClass = { critical: 'pri-critical', high: 'pri-high', normal: 'pri-normal', low: 'pri-low' }[item.priority] || 'pri-normal';
+        const msgPreview = (item.message_body || '').substring(0, 60) + (item.message_body?.length > 60 ? '…' : '');
+        let detail = '';
+        if (item.error_message) detail += `<div style="color:var(--red);font-size:11px;margin-top:3px;">✕ ${item.error_message}</div>`;
+        if (item.retry_count > 0) detail += `<div style="color:var(--amber);font-size:11px;">↺ ${item.retry_count} retries</div>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="mono">#${item.id}</span></td>
+          <td><span class="ch-chip">${item.channel.toUpperCase()}</span></td>
+          <td><span class="pri ${priClass}"></span>${item.priority}</td>
+          <td><span class="pill pill-${sc}">${item.status}</span></td>
+          <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px;">${msgPreview}</td>
+          <td>${detail || '<span style="color:var(--subtle);">—</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const pag = document.getElementById('h-pagination');
+      pag.style.display = 'flex';
+      document.getElementById('h-pag-info').textContent = `Page ${data.page} of ${data.total_pages} · ${data.total} total`;
+      document.getElementById('h-prev').disabled = !data.has_prev;
+      document.getElementById('h-next').disabled = !data.has_next;
+
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--red);">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  function changePage(d) { fetchHistory(_currentPage + d); }
+
+  // ── Templates ────────────────────────────────────────────────────────────────
+  async function fetchTemplates() {
+    const tbody = document.getElementById('t-tbody');
+    const dd = document.getElementById('d-template');
+    try {
+      const data = await api(`${API}/templates/`);
+      _templates = data;
+
+      tbody.innerHTML = '';
+      dd.innerHTML = '<option value="">— Manual Message —</option>';
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">No templates registered yet.</td></tr>';
+        return;
+      }
+
+      data.forEach(t => {
+        const re = /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g;
+        const vars = [];
+        let m;
+        while ((m = re.exec(t.body)) !== null) vars.push(m[1]);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:500;">${t.name}</td>
+          <td style="color:var(--muted); font-size:12px;">${t.subject || '—'}</td>
+          <td>${[...new Set(vars)].map(v => `<span class="ch-chip">{{${v}}}</span>`).join('') || '<span style="color:var(--subtle);">—</span>'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteTemplate(${t.id})">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        const opt = document.createElement('option');
+        opt.value = t.name;
+        opt.textContent = t.name;
+        dd.appendChild(opt);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" class="empty" style="color:var(--red);">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function registerTemplate() {
+    const btn = event.target;
+    btn.disabled = true;
+    try {
+      const payload = {
+        name: document.getElementById('t-name').value.trim(),
+        subject: document.getElementById('t-subject').value.trim(),
+        body: document.getElementById('t-body').value.trim(),
+        allowed_channels: ['email', 'sms', 'push']
+      };
+      if (!payload.name || !payload.body) throw new Error('Name and body are required.');
+      await api(`${API}/templates/`, 'POST', payload);
+      toast('Template registered!');
+      document.getElementById('t-name').value = '';
+      document.getElementById('t-subject').value = '';
+      document.getElementById('t-body').value = '';
+      fetchTemplates();
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteTemplate(id) {
+    if (!confirm('Delete this template?')) return;
+    try {
+      await api(`${API}/templates/${id}`, 'DELETE');
+      toast('Template deleted.');
+      fetchTemplates();
+    } catch (e) { toast(e.message, true); }
+  }
+
+  // ── Preferences ──────────────────────────────────────────────────────────────
+  async function loadPreferences() {
+    const uid = document.getElementById('p-user-id').value.trim();
+    try {
+      const data = await api(`${API}/users/${uid}/preferences`);
+      document.getElementById('p-email').checked = data.email_enabled ?? true;
+      document.getElementById('p-sms').checked = data.sms_enabled ?? true;
+      document.getElementById('p-push').checked = data.push_enabled ?? true;
+      toast('Preferences loaded.');
+    } catch (e) {
+      toast(e.message, true);
+    }
+  }
+
+  async function updatePreferences() {
+    const uid = document.getElementById('p-user-id').value.trim();
+    try {
+      await api(`${API}/users/${uid}/preferences-bulk`, 'POST', {
+        email_enabled: document.getElementById('p-email').checked,
+        sms_enabled: document.getElementById('p-sms').checked,
+        push_enabled: document.getElementById('p-push').checked,
+      });
+      toast('Preferences saved!');
+    } catch (e) { toast(e.message, true); }
+  }
+
+  // ── Webhooks ─────────────────────────────────────────────────────────────────
+  async function fetchWebhooks() {
+    const tbody = document.getElementById('w-tbody');
+    try {
+      const data = await api(`${API}/webhooks/`);
+      tbody.innerHTML = '';
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">No webhooks registered yet.</td></tr>';
+        return;
+      }
+      data.forEach(h => {
+        const tr = document.createElement('tr');
+        const statusDot = h.is_active
+          ? '<span class="active-dot on"></span><span style="color:var(--green);">Active</span>'
+          : '<span class="active-dot off"></span><span style="color:var(--subtle);">Paused</span>';
+        tr.innerHTML = `
+          <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--muted);">${h.url}</td>
+          <td style="font-size:12px;">${h.user_id || '<span style="color:var(--subtle);">Global</span>'}</td>
+          <td>${(Array.isArray(h.events) ? h.events : h.events?.split(',') || []).map(e => `<span class="ch-chip">${e.trim().toUpperCase()}</span>`).join('')}</td>
+          <td>${statusDot}</td>
+          <td style="display:flex; gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="toggleWebhook(${h.id})">Toggle</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteWebhook(${h.id})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty" style="color:var(--red);">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function registerWebhook() {
+    const btn = event.target;
+    btn.disabled = true;
+    try {
+      const events = [];
+      if (document.getElementById('w-sent').checked) events.push('sent');
+      if (document.getElementById('w-failed').checked) events.push('failed');
+      const url = document.getElementById('w-url').value.trim();
+      if (!url) throw new Error('URL is required.');
+      await api(`${API}/webhooks/`, 'POST', {
+        url, events,
+        user_id: document.getElementById('w-user-id').value.trim() || null,
+        secret: document.getElementById('w-secret').value.trim() || null,
+      });
+      toast('Webhook registered!');
+      document.getElementById('w-url').value = '';
+      fetchWebhooks();
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function toggleWebhook(id) {
+    try {
+      await api(`${API}/webhooks/${id}/toggle`, 'PATCH');
+      fetchWebhooks();
+    } catch (e) { toast(e.message, true); }
+  }
+
+  async function deleteWebhook(id) {
+    if (!confirm('Delete this webhook?')) return;
+    try {
+      await api(`${API}/webhooks/${id}`, 'DELETE');
+      toast('Webhook removed.');
+      fetchWebhooks();
+    } catch (e) { toast(e.message, true); }
+  }
+
+  // Initial loads
+  fetchTemplates();
+  fetchWebhooks();
+</script>
 </body>
-
 </html>

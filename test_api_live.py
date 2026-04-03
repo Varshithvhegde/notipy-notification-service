@@ -171,11 +171,11 @@ def test_webhooks():
     console.print("\n")
     console.print(Panel.fit("[bold blue]Step 6: Webhook Integration Registry[/bold blue]", border_style="blue"))
     
-    webhook_url = "https://webhook.site/test-klarixa"
+    webhook_url = "https://webhook.site/6ec420d8-863c-4a0f-ae5b-429728ee264e"
     payload = {
         "url": webhook_url,
         "events": ["sent", "failed"],
-        "secret": "klarixa_secret_123"
+        "secret": "notipy_secret_123"
     }
     
     with console.status("[bold blue]Registering callback listener via registry...", spinner="earth"):
@@ -192,9 +192,68 @@ def test_webhooks():
     
     console.print(f"[bold green]✓[/bold green] Ephemeral webhook lifecycle verified.")
 
+def test_batch_api():
+    console.print("\n")
+    console.print(Panel.fit("[bold green]Step 7: Batch Delivery System[/bold green]", border_style="green"))
+    
+    payload = {
+        "notifications": [
+            {
+                "user_id": "batch_user_A",
+                "channels": ["email"],
+                "message_body": "Batch test for A",
+                "idempotency_key": f"batch_A_{int(time.time())}"
+            },
+            {
+                "user_id": "batch_user_B",
+                "channels": ["push", "sms"],
+                "message_body": "Batch test for B",
+                "idempotency_key": f"batch_B_{int(time.time())}"
+            }
+        ]
+    }
+    
+    with console.status("[bold blue]Executing atomic multi-user batch dispatch...", spinner="point"):
+        res = requests.post(f"{BASE_URL}/notifications/batch", json=payload)
+        res.raise_for_status()
+        data = res.json()
+        time.sleep(0.5)
+
+    console.print(f"[bold green]✓[/bold green] SUCCESS: Atomic batch processing complete.")
+    console.print(f"[bold cyan]ℹ[/bold cyan] Total Individual Notifications Queued: [bold white]{data['queued_count']}[/bold white]")
+
+def test_analytics():
+    console.print("\n")
+    console.print(Panel.fit("[bold white]Step 8: Global Analytics & Stream Stats[/bold white]", border_style="white"))
+    
+    with console.status("[bold blue]Querying aggregate engine telemetry...", spinner="earth"):
+        res = requests.get(f"{BASE_URL}/analytics/stats")
+        res.raise_for_status()
+        data = res.json()
+        time.sleep(0.5)
+
+    console.print(f"[bold green]✓[/bold green] SUCCESS: Telemetry retrieved across {data['total_notifications']} system jobs.")
+    
+    table = Table(title="Notification Throughput by Channel")
+    table.add_column("Channel", style="magenta")
+    table.add_column("Sent", style="green")
+    table.add_column("Failed", style="red")
+    table.add_column("Pending", style="yellow")
+    table.add_column("Total Load", style="bold cyan")
+    
+    for ch in data["by_channel"]:
+        table.add_row(
+            ch["channel"].upper(),
+            str(ch["sent"]),
+            str(ch["failed"]),
+            str(ch["pending"]),
+            str(ch["total"])
+        )
+    console.print(table)
+
 if __name__ == "__main__":
     console.print("\n")
-    console.rule("[bold cyan]🚀 Klarixa Engine Live Core Diagnostics 🚀")
+    console.rule("[bold cyan]🚀 notipy Engine Live Core Diagnostics 🚀")
     console.print("\n")
     
     wait_for_server()
@@ -205,6 +264,8 @@ if __name__ == "__main__":
     test_idempotency()
     test_rate_limiter()
     test_webhooks()
+    test_batch_api()
+    test_analytics()
     
     console.print("\n")
     console.rule("[bold green]ALL DIAGNOSTIC SYSTEMS GREEN[/bold green]")

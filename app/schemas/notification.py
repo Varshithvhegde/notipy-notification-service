@@ -9,9 +9,13 @@ class NotificationCreate(BaseModel):
     user_id: str
     channels: List[ChannelType]
     priority: NotificationPriority = NotificationPriority.NORMAL
-    message_body: str
+    message_body: Optional[str] = None # Optional if template_name is used
+    template_name: Optional[str] = None # DB-backed template name
     idempotency_key: Optional[str] = None
     template_vars: Optional[dict] = None
+
+class NotificationBatchCreate(BaseModel):
+    notifications: List[NotificationCreate]
 
 class NotificationResponse(BaseModel):
     id: int
@@ -37,3 +41,17 @@ class PaginatedNotificationResponse(BaseModel):
     total_pages: int
     has_next: bool
     has_prev: bool
+
+class ChannelStats(BaseModel):
+    channel: str
+    sent: int
+    failed: int
+    pending: int
+    total: int
+
+class AnalyticsResponse(BaseModel):
+    period_start: Optional[datetime] = None
+    period_end: Optional[datetime] = None
+    total_notifications: int
+    by_channel: List[ChannelStats]
+    by_status: dict[str, int]
