@@ -1,6 +1,10 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
+from app.db.database import SessionLocal
+from app.models.notification import Notification, NotificationStatus
+from app.models.user_preference import UserPreference
+from app.services.providers import get_provider
 
 PRIORITY_MAP = {
     "critical": 0,
@@ -59,10 +63,6 @@ class NotificationQueue:
         return result
 
     async def _process(self, notification_id: int, template_vars: dict, attempt: int):
-        from app.db.database import SessionLocal
-        from app.models.notification import Notification, NotificationStatus
-        from app.models.user_preference import UserPreference
-        from app.services.providers import get_provider
 
         def db_process():
             db = SessionLocal()

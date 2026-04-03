@@ -3,474 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notification Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Klarixa Notification Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg-base: #09090b;
+            --bg-panel: rgba(24, 24, 27, 0.65);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
             --secondary: #ec4899;
-            --bg-dark: #0f172a;
-            --bg-panel: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-glass: rgba(255, 255, 255, 0.08);
+            --text-muted: #a1a1aa;
             --success: #10b981;
             --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
         body {
-            background: linear-gradient(135deg, var(--bg-dark) 0%, #1e1b4b 100%);
+            background-color: var(--bg-base);
+            background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
             color: var(--text-main);
             min-height: 100vh;
             padding: 2rem;
+            line-height: 1.6;
         }
 
-        .dashboard-header {
-            text-align: center;
-            margin-bottom: 3rem;
-            animation: fadeInDown 0.8s ease-out;
+        /* Nav Header */
+        .header {
+            max-width: 1300px; margin: 0 auto 3rem auto;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.2rem; font-weight: 800;
+            background: linear-gradient(to right, #a78bfa, #f472b6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header p { color: var(--text-muted); font-size: 1.1rem; }
+
+        /* General Layout */
+        .layout-grid {
+            max-width: 1300px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1.2fr; gap: 2rem;
         }
 
-        .dashboard-header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .dashboard-header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .glass-panel {
-            background: var(--bg-panel);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-glass);
-            border-radius: 16px;
+        /* Glass Cards */
+        .card {
+            background: var(--bg-panel); backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass); border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            animation: fadeInUp 0.8s ease-out forwards;
-            opacity: 0;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
         }
+        .card:hover { border-color: rgba(139, 92, 246, 0.3); }
+        .card h2 { font-size: 1.4rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
+        .card p.desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
 
-        .glass-panel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 255, 255, 0.15);
+        /* Form Elements */
+        label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; color: #cbd5e1; font-weight: 600; }
+        .form-group { margin-bottom: 1.2rem; }
+        
+        input[type="text"], select, textarea {
+            width: 100%; padding: 0.8rem; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass);
+            color: white; font-size: 1rem; transition: all 0.3s;
         }
-
-        /* Panel delays for cascading entrance */
-        .glass-panel:nth-child(1) { animation-delay: 0.1s; }
-        .glass-panel:nth-child(2) { animation-delay: 0.2s; }
-        .glass-panel:nth-child(3) { animation-delay: 0.3s; grid-column: span 2; }
-
-        h2 {
-            font-size: 1.25rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--primary); background: rgba(0,0,0,0.6);
         }
+        textarea { min-height: 80px; resize: vertical; }
 
-        h2::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 20px;
-            background: var(--primary);
-            border-radius: 4px;
-            box-shadow: 0 0 10px var(--primary-glow);
+        /* Custom Checkboxes for Multi-Channel */
+        .checkbox-group { display: flex; gap: 1rem; }
+        .checkbox-label {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            background: rgba(0,0,0,0.3); padding: 0.6rem 1rem; border-radius: 8px;
+            border: 1px solid var(--border-glass); transition: 0.3s;
         }
+        .checkbox-label:hover { border-color: var(--primary); }
+        .checkbox-label input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        input[type="text"], 
-        select, 
-        textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-glass);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus, 
-        select:focus, 
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-            background: rgba(15, 23, 42, 0.8);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
+        /* Buttons */
         button {
-            width: 100%;
-            padding: 0.8rem 1.5rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px var(--primary-glow);
+            width: 100%; padding: 0.8rem 1.5rem; margin-top: 0.5rem;
+            background: var(--primary); color: white; border: none; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+        button:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        button:active { transform: translateY(0px); }
+        button.secondary { background: transparent; border: 1px solid var(--secondary); box-shadow: none; }
+        button.secondary:hover { background: rgba(236, 72, 153, 0.1); }
+        
+        /* Flex rows for inputs */
+        .row { display: flex; gap: 1rem; }
+        .row > * { flex: 1; }
+
+        /* Results & Logs */
+        .log-box {
+            margin-top: 1rem; padding: 1rem; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5); border-left: 4px solid var(--primary);
+            font-family: 'Courier New', Courier, monospace; font-size: 0.9rem;
+            color: #10b981; white-space: pre-wrap; min-height: 50px;
         }
 
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px var(--primary-glow);
-            background: linear-gradient(135deg, #818cf8 0%, var(--primary) 100%);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        button.outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            box-shadow: none;
-            margin-top: 10px;
-        }
-        button.outline:hover {
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-pending { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.5); }
-        .status-sent { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); }
-        .status-failed { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.5); }
-
-        .result-box {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            border-left: 3px solid var(--primary);
-            font-family: monospace;
-            font-size: 0.9rem;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            min-height: 48px;
-            color: #cbd5e1;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(8px);
-            border-left: 4px solid var(--success);
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transform: translateX(120%);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-        }
-
-        .toast.error { border-left-color: var(--danger); }
+        /* Status Pills */
+        .pill { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; }
+        .pill.pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .pill.sent { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .pill.failed { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
         /* History Table */
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-        
-        .history-table th, .history-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        .table-container { overflow-x: auto; margin-top: 1rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-glass); }
+        th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
 
-        .history-table th {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: rgba(0,0,0,0.2);
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; padding: 1rem;
+            background: #18181b; border-left: 4px solid var(--success);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-radius: 8px;
+            display: flex; align-items: center; gap: 10px; z-index: 999;
+            transform: translateX(120%); transition: 0.4s;
         }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-color: var(--danger); color: #f87171; }
 
-        .history-table tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        /* Animations */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container { grid-template-columns: 1fr; }
-            .glass-panel:nth-child(3) { grid-column: span 1; }
+        /* Mobile Adjustments */
+        @media(max-width: 900px) {
+            .layout-grid { grid-template-columns: 1fr; }
+            .row { flex-direction: column; gap: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-header">
-        <h1>Global Dispatch Terminal</h1>
-        <p>Live REST API Notification Microservice Monitor</p>
-    </div>
-
-    <div class="container">
-        <!-- Send Notification Panel -->
-        <div class="glass-panel">
-            <h2>Dispatch Notification</h2>
-            <div class="form-group">
-                <label>Target User ID</label>
-                <input type="text" id="noti-user-id" value="user_web_123" placeholder="e.g. user_123">
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <div class="form-group" style="flex: 1;">
-                    <label>Channel</label>
-                    <select id="noti-channel">
-                        <option value="email">Email</option>
-                        <option value="sms">SMS</option>
-                        <option value="push">Push Notification</option>
-                    </select>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Priority</label>
-                    <select id="noti-priority">
-                        <option value="critical">Critical</option>
-                        <option value="high">High</option>
-                        <option value="normal" selected>Normal</option>
-                        <option value="low">Low</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Message Payload (Supports {{templating}})</label>
-                <textarea id="noti-body">Hey {{name}}, your premium order {{order_id}} has shipped via priority relay!</textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>Template Variables (JSON Format)</label>
-                <textarea id="noti-vars" style="min-height: 60px;">{"name": "Varshith", "order_id": "ORD-999"}</textarea>
-            </div>
-
-            <button onclick="dispatchNotification()">Execute Dispatch</button>
-            <div id="dispatch-result" class="result-box">Awaiting payload injection...</div>
+    <div class="header">
+        <div>
+            <h1>Klarixa Admin Dashboard</h1>
+            <p>Live REST API Notification Microservice Demonstrator</p>
         </div>
-
-        <!-- User Preferences Panel -->
-        <div class="glass-panel">
-            <h2>Channel Routing Preferences</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Simulate a user explicitly revoking communication consent before attempting to dispatch payloads to them.</p>
-            
-            <div class="form-group">
-                <label>Target User ID</label>
-                <input type="text" id="pref-user-id" value="user_web_123">
-            </div>
-
-            <div class="form-group">
-                <label>Select Interception Target</label>
-                <select id="pref-channel">
-                    <option value="email">Email</option>
-                    <option value="sms">SMS</option>
-                    <option value="push">Push Notification</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Consent Toggle</label>
-                <select id="pref-toggle">
-                    <option value="true">Opt-In (Allow)</option>
-                    <option value="false">Opt-Out (Block)</option>
-                </select>
-            </div>
-
-            <button onclick="setUserPreference()">Apply Configuration Filter</button>
-            <button class="outline" onclick="fetchPreferences()">Audit Current Live Filters</button>
-            <div id="pref-result" class="result-box">Ready for configuration checks.</div>
-        </div>
-
-        <!-- History Monitor Panel -->
-        <div class="glass-panel">
-            <h2>Live Delivery Telemetry</h2>
-            
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <input type="text" id="hist-user-id" value="user_web_123" placeholder="Target User ID">
-                <button style="width: auto; padding: 0 2rem;" onclick="fetchHistory()">Poll Database Logs</button>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Priority / Channel</th>
-                            <th>Status Badge</th>
-                            <th>Timestamp (UTC)</th>
-                            <th>Raw Final Rendered Message</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-body">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No telemetry fetched yet. Press Poll to ping backend SQLite servers manually.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div style="text-align: right;">
+            <p style="font-size: 0.9rem; color: var(--success);">● Connection Active</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">http://127.0.0.1:8000</p>
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <div class="layout-grid">
+        
+        <!-- LEFT COLUMN: Dispatch & Checking -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <div class="card">
+                <h2>Broadcast Notification</h2>
+                <p class="desc">Deploy templates dynamically. You can fire to multiple pipelines simultaneously.</p>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label>Target User ID</label>
+                        <input type="text" id="noti-user-id" value="user_web_123">
+                    </div>
+                    <div class="form-group">
+                        <label>Payload Priority</label>
+                        <select id="noti-priority">
+                            <option value="critical">Critical (0)</option>
+                            <option value="high">High (1)</option>
+                            <option value="normal" selected>Normal (2)</option>
+                            <option value="low">Low (3)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Broadcast Channels (Select Multiple)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="email" checked> Email</label>
+                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="sms"> SMS</label>
+                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="push"> Push App</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Template Message Layout</label>
+                    <textarea id="noti-body">Hey {{name}}, security perimeter breached at {{location}}!</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Injected Variables (JSON)</label>
+                    <textarea id="noti-vars" style="min-height: 50px;">{"name": "Varshith", "location": "Sector 7"}</textarea>
+                </div>
+
+                <button onclick="dispatchBroadcast()">Execute Broadcast</button>
+                <div id="dispatch-log" class="log-box">Standing by...</div>
+            </div>
+
+            <!-- Single Lookup Feature -->
+            <div class="card">
+                <h2>Query Single Blueprint Ticket</h2>
+                <p class="desc">Lookup a specific database task strictly by its returned integer ID.</p>
+                <div class="row">
+                    <input type="text" id="lookup-id" placeholder="Enter Task ID number (e.g. 1)">
+                    <button class="secondary" style="margin-top: 0;" onclick="lookupID()">Query DB</button>
+                </div>
+                <div id="lookup-log" class="log-box" style="margin-top: 1rem; color: #cbd5e1;">Awaiting parameter...</div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Preferences & History -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <!-- Preferences Setup -->
+            <div class="card">
+                <h2>Database Interception Rules</h2>
+                <p class="desc">Simulate a user revoking consent. Any opted-out payload will natively bounce before it leaves the server.</p>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label>User ID</label>
+                        <input type="text" id="pref-user-id" value="user_web_123">
+                    </div>
+                    <div class="form-group">
+                        <label>Channel Target</label>
+                        <select id="pref-channel">
+                            <option value="email">Email Routing</option>
+                            <option value="sms">SMS Protocol</option>
+                            <option value="push">Push Notification</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Consent Status Toggle</label>
+                        <select id="pref-toggle">
+                            <option value="true">Opt-In (Allow Transmissions)</option>
+                            <option value="false">Opt-Out (Block Silently)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <button onclick="setPreference()">Apply DB Constraint</button>
+                    <button class="secondary" onclick="fetchPreferences()">Audit Live Rules</button>
+                </div>
+                <div id="pref-log" class="log-box" style="color: #cbd5e1;">Ready.</div>
+            </div>
+
+            <!-- Live History Telemetry -->
+            <div class="card">
+                <h2>Telemetry Tracker Grid</h2>
+                <p class="desc">Monitor the absolute state of every notification task dispatched natively for an ID.</p>
+                
+                <div class="row" style="align-items: flex-end; margin-bottom: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="text" id="hist-user-id" value="user_web_123" placeholder="Target User ID">
+                    </div>
+                    <button style="width: auto; padding: 0.8rem 2rem;" onclick="fetchHistory()">Poll Database Stream</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>PK ID</th>
+                                <th>Channel</th>
+                                <th>Pri</th>
+                                <th>Internal State</th>
+                                <th>Rendered Output Body</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Hit Poll to sync telemetry.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+
+    </div>
+
+    <!-- Hidden Toast Notification Element -->
     <div id="toast" class="toast">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-        <span id="toast-msg">Operation successful</span>
+        <span id="toast-icon">✅</span>
+        <span id="toast-msg">Success</span>
     </div>
 
     <script>
         const API_BASE = 'http://127.0.0.1:8000';
 
+        // GUI Toaster Core
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').textContent = message;
+            document.getElementById('toast-icon').textContent = isError ? '❌' : '✅';
             
-            if (isError) {
-                toast.classList.add('error');
-                toast.querySelector('svg').innerHTML = '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>';
-            } else {
-                toast.classList.remove('error');
-                toast.querySelector('svg').innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>';
-            }
-            
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            toast.className = `toast show ${isError ? 'error' : ''}`;
+            setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        async function safeFetch(url, options = {}) {
+        // Fetch Wrapper mapping native JSON responses and errors safely
+        async function apiCall(url, options = {}) {
             try {
-                const response = await fetch(url, options);
-                let data;
-                try { data = await response.json(); } catch(e) { data = "Parsing error."; }
+                const res = await fetch(url, options);
+                let data = null;
+                try { data = await res.json(); } catch(e) {}
                 
-                if (!response.ok) {
-                    const errMsg = data.detail || JSON.stringify(data);
-                    throw new Error(`[${response.status}] ${errMsg}`);
+                if (!res.ok) {
+                    const desc = data?.detail ? JSON.stringify(data.detail) : 'Server Crashed';
+                    throw new Error(`[HTTP ${res.status}] ${desc}`);
                 }
                 return data;
-            } catch (error) {
-                showToast(error.message, true);
-                throw error;
+            } catch (err) {
+                showToast(err.message, true);
+                throw err;
             }
         }
 
-        async function dispatchNotification() {
-            const resultBox = document.getElementById('dispatch-result');
-            resultBox.textContent = "Negotiating ASGI connection...";
+        /* ----- ACTION: Broadcast Notification ----- */
+        async function dispatchBroadcast() {
+            const logBox = document.getElementById('dispatch-log');
+            logBox.style.color = '#cbd5e1';
+            logBox.textContent = "Negotiating ASGI Transmission...";
             
             try {
+                // Collect multiple channels safely
+                const channels = Array.from(document.querySelectorAll('.channel-cb:checked')).map(cb => cb.value);
+                if (channels.length === 0) throw new Error("CRITICAL: You must manually select at least one pipeline!");
+
+                // Validating standard JSON string templates
                 let vars = {};
-                try {
-                    const varsStr = document.getElementById('noti-vars').value.trim();
-                    if(varsStr) vars = JSON.parse(varsStr);
-                } catch(e) {
-                    throw new Error("Template Variables must be legitimate JSON formatting!");
-                }
+                const varsInput = document.getElementById('noti-vars').value.trim();
+                if(varsInput) vars = JSON.parse(varsInput);
 
                 const payload = {
                     user_id: document.getElementById('noti-user-id').value,
-                    channels: [document.getElementById('noti-channel').value],
+                    channels: channels, // Automatically handles multi-posting natively!
                     priority: document.getElementById('noti-priority').value,
                     message_body: document.getElementById('noti-body').value,
                     template_vars: vars,
-                    idempotency_key: "WEB_GUI_" + Date.now() // Dynamically avoid duplicates naturally
+                    idempotency_key: "WEB_UI_" + Date.now() 
                 };
 
-                const data = await safeFetch(`${API_BASE}/notifications/`, {
+                const data = await apiCall(`${API_BASE}/notifications/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                resultBox.innerHTML = `[✓] Fast API successfully queued array payload! \nCreated ${data.length} Jobs! Primary ID: #${data[0].id} \nTracking Database Status: <span class="status-badge status-${data[0].status.toLowerCase()}">${data[0].status}</span>`;
-                showToast('Notification Dispatched Successfully!');
+                logBox.style.color = '#10b981';
+                logBox.textContent = `[SUCCESS] Created ${data.length} task(s) asynchronously!\nRoot ID Tracked: #${data[0].id}\nStatus Flag: ${data[0].status.toUpperCase()}`;
+                showToast(`Broadcast Fired successfully to ${data.length} pipelines!`);
                 
-                // Immediately refresh telemetry history logic
+                // Keep GUI dynamic
                 document.getElementById('hist-user-id').value = payload.user_id;
-                setTimeout(fetchHistory, 1500); // 1.5s delay allowing worker to finish simulating network
+                document.getElementById('pref-user-id').value = payload.user_id;
+                setTimeout(fetchHistory, 1200); // Wait 1 second exactly for backend priority simulation to physically land before polling
 
             } catch (error) {
-                resultBox.textContent = `[X] Exception Failed: ${error.message}`;
+                logBox.style.color = '#ef4444';
+                logBox.textContent = `[FAILED] ${error.message}`;
             }
         }
 
-        async function setUserPreference() {
-            const resultBox = document.getElementById('pref-result');
-            resultBox.textContent = "Committing Preference Write...";
+        /* ----- ACTION: Query Single ID Tasks ----- */
+        async function lookupID() {
+            const logBox = document.getElementById('lookup-log');
+            const idVal = document.getElementById('lookup-id').value;
+            if(!idVal) return showToast("Provide a numeric ID", true);
 
+            logBox.textContent = "Searching indexes...";
+            try {
+                const data = await apiCall(`${API_BASE}/notifications/${idVal}`);
+                logBox.style.color = '#10b981';
+                logBox.textContent = `Retrieved Ticket #${data.id}\nRouting: ${data.channel.toUpperCase()} (${data.priority})\nStatus: ${data.status.toUpperCase()}\nRetries Flushed: ${data.retry_count}\nRendered Message: "${data.message_body}"`;
+            } catch (error) {
+                logBox.style.color = '#ef4444';
+                logBox.textContent = error.message;
+            }
+        }
+
+        /* ----- ACTION: Toggle Consent Settings  ----- */
+        async function setPreference() {
+            const logBox = document.getElementById('pref-log');
             try {
                 const userId = document.getElementById('pref-user-id').value;
                 const payload = {
@@ -478,53 +401,54 @@
                     is_opted_in: document.getElementById('pref-toggle').value === 'true'
                 };
 
-                const data = await safeFetch(`${API_BASE}/users/${userId}/preferences`, {
+                const data = await apiCall(`${API_BASE}/users/${userId}/preferences`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                resultBox.textContent = `[✓] System intercepted preference successfully!\nChannel: ${data.channel.toUpperCase()} \nFilter Active Permitted: ${data.is_opted_in}`;
-                showToast('Filter Rules Executed!');
+                logBox.style.color = '#10b981';
+                logBox.textContent = `Database Constraint Engaged!\nTarget: ${data.channel.toUpperCase()}\nConsent Override: ${data.is_opted_in ? 'ALLOW' : 'DENY'}`;
+                showToast(`Consent rules updated safely`);
             } catch (error) {
-                resultBox.textContent = `[X] Database Fail Check: ${error.message}`;
+                logBox.style.color = '#ef4444';
+                logBox.textContent = error.message;
             }
         }
 
+        /* ----- ACTION: View Live Consent Matrix ----- */
         async function fetchPreferences() {
-            const resultBox = document.getElementById('pref-result');
-            resultBox.textContent = "Querying live database array...";
-
+            const logBox = document.getElementById('pref-log');
+            logBox.style.color = '#cbd5e1';
             try {
                 const userId = document.getElementById('pref-user-id').value;
-                const data = await safeFetch(`${API_BASE}/users/${userId}/preferences`);
+                const data = await apiCall(`${API_BASE}/users/${userId}/preferences`);
                 
                 if (data.length === 0) {
-                    resultBox.textContent = "[!] Zero explicit filters configured historically. Native standard delivery implicitly allowed entirely!";
+                    logBox.textContent = "[!] Administrator Warning: Zero constraints defined. System natively defaults to PERMIT ALL completely.";
                 } else {
-                    resultBox.textContent = "[✓] Data filters recovered logically:\n" + JSON.stringify(data, null, 2);
+                    let dump = "Active Live Filters Found:\n";
+                    data.forEach(p => dump += `> ${p.channel.toUpperCase()}: ${p.is_opted_in ? '🟩 ALLOW' : '🟥 DENY'}\n`);
+                    logBox.textContent = dump;
                 }
-                showToast('Audited Array Recovered!');
+                showToast('Audit complete');
             } catch (error) {
-                resultBox.textContent = `[X] Fetch Failure Protocol: ${error.message}`;
+                logBox.style.color = '#ef4444';
+                logBox.textContent = error.message;
             }
         }
 
-        function getStatusSpan(status) {
-            status = status.toLowerCase();
-            return `<span class="status-badge status-${status}">${status}</span>`;
-        }
-
+        /* ----- ACTION: Refresh Live Tracking Table ----- */
         async function fetchHistory() {
             const tbody = document.getElementById('history-body');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Executing standard REST history logic sweep...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Syncing...</td></tr>';
 
             try {
                 const userId = document.getElementById('hist-user-id').value;
-                const data = await safeFetch(`${API_BASE}/notifications/user/${userId}`);
+                const data = await apiCall(`${API_BASE}/notifications/user/${userId}`);
                 
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No history recorded logically spanning this specific user ID directly!</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No records mapped to this Identity node securely.</td></tr>';
                     return;
                 }
 
@@ -532,29 +456,32 @@
                 data.forEach(item => {
                     const tr = document.createElement('tr');
                     
-                    const timeStr = new Date(item.created_at).toLocaleTimeString();
+                    // Logic to visually color components elegantly
+                    const statClass = item.status.toLowerCase();
+                    const statusHTML = `<span class="pill ${statClass}">${item.status}</span>`;
                     
+                    let extra = "";
+                    if (item.error_message) extra = `<div style="color:var(--danger); font-size:0.8rem; margin-top:4px;">Error: ${item.error_message}</div>`;
+                    if (item.retry_count > 0) extra += `<div style="color:var(--warning); font-size:0.8rem;">Retries Engaged: ${item.retry_count}</div>`;
+
                     tr.innerHTML = `
                         <td style="font-weight: bold; color: var(--primary);">#${item.id}</td>
-                        <td style="text-transform: capitalize;">${item.priority} <span style="opacity: 0.5;">|</span> ${item.channel}</td>
-                        <td>${getStatusSpan(item.status)}</td>
-                        <td style="color: var(--text-muted); font-size: 0.9em;">${timeStr}</td>
-                        <td style="font-family: inherit;">${item.message_body}</td>
+                        <td>${item.channel.toUpperCase()}</td>
+                        <td style="font-size: 0.9rem;">${item.priority.toUpperCase()}</td>
+                        <td>${statusHTML}${extra}</td>
+                        <td style="font-family: inherit; font-size: 0.9rem;">${item.message_body}</td>
                     `;
                     tbody.appendChild(tr);
                 });
                 
-                showToast('Live Telemetry Refreshed!');
+                showToast('Telemetry Map Flushed & Synced!');
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Error: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Disconnected: ${error.message}</td></tr>`;
             }
         }
 
-        // Run audit on load logically to demonstrate connections quickly!
-        window.addEventListener('load', () => {
-            setTimeout(fetchHistory, 500);
-        });
-
+        // Initialize natively immediately smoothly
+        window.addEventListener('load', () => setTimeout(fetchHistory, 300));
     </script>
 </body>
 </html>
