@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from app.api.endpoints import users, notifications
+from app.api.endpoints import users, notifications, webhooks
 from app.workers.queue import notification_queue
 from app.core.logging import setup_logging
 
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
 
 @app.get("/ping")
 def health_check():

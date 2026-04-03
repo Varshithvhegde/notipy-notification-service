@@ -7,7 +7,9 @@ from sqlalchemy import select
 from app.db.database import SessionLocal
 from app.models.notification import Notification, NotificationStatus
 from app.models.user_preference import UserPreference
+from app.models.webhook import Webhook
 from app.services.providers import get_provider
+from app.services.webhook_service import fire_webhooks
 
 PRIORITY_MAP = {
     "critical": 0,
@@ -102,6 +104,8 @@ class NotificationQueue:
                 noti.message_body = rendered_body
                 await db.commit()
 
+                # Fire registered webhooks asynchronously
+                await fire_webhooks(noti.id, noti.user_id, "sent", channel)
                 logger.info(f"[{channel.upper()}] Delivered notification -> user={noti.user_id} on attempt {attempt}")
 
             except Exception as e:
@@ -128,5 +132,8 @@ class NotificationQueue:
                     noti.retry_count = attempt
                     noti.message_body = rendered_body
                     await db.commit()
+
+                    # Fire failure webhooks
+                    await fire_webhooks(noti.id, noti.user_id, "failed", channel)
 
 notification_queue = NotificationQueue()

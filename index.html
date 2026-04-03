@@ -3,258 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klarixa Notification Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>Klarixa | AI Notification Engine</title>
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #09090b;
-            --bg-panel: rgba(24, 24, 27, 0.65);
-            --border-glass: rgba(255, 255, 255, 0.1);
-            --primary: #8b5cf6;
-            --primary-hover: #7c3aed;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
             --secondary: #ec4899;
-            --text-main: #f8fafc;
-            --text-muted: #a1a1aa;
-            --success: #10b981;
-            --danger: #ef4444;
+            --dark: #0f172a;
+            --darkER: #020617;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
             --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
         body {
-            background-color: var(--bg-base);
-            background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
-            color: var(--text-main);
+            background-color: var(--darkER);
+            color: var(--text);
             min-height: 100vh;
-            padding: 2rem;
-            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+            padding: 2rem 1rem;
         }
 
-        /* Nav Header */
-        .header {
-            max-width: 1300px; margin: 0 auto 3rem auto;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border-glass);
-            padding-bottom: 2rem;
-        }
-        .header h1 {
-            font-size: 2.2rem; font-weight: 800;
-            background: linear-gradient(to right, #a78bfa, #f472b6);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        .header p { color: var(--text-muted); font-size: 1.1rem; }
-
-        /* General Layout */
-        .layout-grid {
-            max-width: 1300px; margin: 0 auto;
-            display: grid; grid-template-columns: 1fr 1.2fr; gap: 2rem;
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
         }
 
-        /* Glass Cards */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .badge {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
         .card {
-            background: var(--bg-panel); backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass); border-radius: 16px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
             padding: 2rem;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
         }
-        .card:hover { border-color: rgba(139, 92, 246, 0.3); }
-        .card h2 { font-size: 1.4rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px; }
-        .card p.desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
 
-        /* Form Elements */
-        label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; color: #cbd5e1; font-weight: 600; }
-        .form-group { margin-bottom: 1.2rem; }
-        
-        input[type="text"], select, textarea {
-            width: 100%; padding: 0.8rem; border-radius: 8px;
-            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass);
-            color: white; font-size: 1rem; transition: all 0.3s;
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.2);
         }
-        input[type="text"]:focus, select:focus, textarea:focus {
-            outline: none; border-color: var(--primary); background: rgba(0,0,0,0.6);
-        }
-        textarea { min-height: 80px; resize: vertical; }
 
-        /* Custom Checkboxes for Multi-Channel */
-        .checkbox-group { display: flex; gap: 1rem; }
-        .checkbox-label {
-            display: flex; align-items: center; gap: 8px; cursor: pointer;
-            background: rgba(0,0,0,0.3); padding: 0.6rem 1rem; border-radius: 8px;
-            border: 1px solid var(--border-glass); transition: 0.3s;
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
-        .checkbox-label:hover { border-color: var(--primary); }
-        .checkbox-label input { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 
-        /* Buttons */
+        .card .desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .row {
+            display: flex;
+            gap: 1rem;
+        }
+
         button {
-            width: 100%; padding: 0.8rem 1.5rem; margin-top: 0.5rem;
-            background: var(--primary); color: white; border: none; border-radius: 8px;
-            font-size: 1rem; font-weight: 600; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-        }
-        button:hover { background: var(--primary-hover); transform: translateY(-2px); }
-        button:active { transform: translateY(0px); }
-        button.secondary { background: transparent; border: 1px solid var(--secondary); box-shadow: none; }
-        button.secondary:hover { background: rgba(236, 72, 153, 0.1); }
-        
-        /* Flex rows for inputs */
-        .row { display: flex; gap: 1rem; }
-        .row > * { flex: 1; }
-
-        /* Results & Logs */
-        .log-box {
-            margin-top: 1rem; padding: 1rem; border-radius: 8px;
-            background: rgba(0, 0, 0, 0.5); border-left: 4px solid var(--primary);
-            font-family: 'Courier New', Courier, monospace; font-size: 0.9rem;
-            color: #10b981; white-space: pre-wrap; min-height: 50px;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
         }
 
-        /* Status Pills */
-        .pill { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; }
+        button:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        button.secondary {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Table Styles */
+        .table-container {
+            margin-top: 1rem;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: var(--glass);
+            padding: 1rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pill {
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
         .pill.pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-        .pill.sent { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .pill.sent { background: rgba(34, 197, 94, 0.2); color: var(--success); }
         .pill.failed { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-        /* History Table */
-        .table-container { overflow-x: auto; margin-top: 1rem; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-glass); }
-        th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-        tr:hover td { background: rgba(255,255,255,0.03); }
-
-        /* Toast */
         .toast {
-            position: fixed; bottom: 20px; right: 20px; padding: 1rem;
-            background: #18181b; border-left: 4px solid var(--success);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-radius: 8px;
-            display: flex; align-items: center; gap: 10px; z-index: 999;
-            transform: translateX(120%); transition: 0.4s;
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
         }
-        .toast.show { transform: translateX(0); }
-        .toast.error { border-color: var(--danger); color: #f87171; }
 
-        /* Mobile Adjustments */
-        @media(max-width: 900px) {
-            .layout-grid { grid-template-columns: 1fr; }
-            .row { flex-direction: column; gap: 0; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Custom Checkbox styles for Webhooks */
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div>
-            <h1>Klarixa Admin Dashboard</h1>
-            <p>Live REST API Notification Microservice Demonstrator</p>
-        </div>
-        <div style="text-align: right;">
-            <p style="font-size: 0.9rem; color: var(--success);">● Connection Active</p>
-            <p style="font-size: 0.8rem; color: var(--text-muted);">http://127.0.0.1:8000</p>
-        </div>
-    </div>
+    <div class="container">
+        <header>
+            <div class="badge">Enterprise Ready</div>
+            <h1>Klarixa AI</h1>
+            <p>The state-of-the-art notification infrastructure for modern applications. Seamlessly orchestrate Email, SMS, and Push with built-in intelligence.</p>
+        </header>
 
-    <div class="layout-grid">
-        
-        <!-- LEFT COLUMN: Dispatch & Checking -->
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
+        <div class="grid">
             
+            <!-- Send Notification -->
             <div class="card">
-                <h2>Broadcast Notification</h2>
-                <p class="desc">Deploy templates dynamically. You can fire to multiple pipelines simultaneously.</p>
+                <h2>Dispatch Hub</h2>
+                <p class="desc">Create and route multi-channel notifications with priority weighting and advanced templating.</p>
                 
+                <div class="form-group">
+                    <label>Identity Node (User ID)</label>
+                    <input type="text" id="user_id" value="user_web_123">
+                </div>
+
+                <div class="form-group">
+                    <label>Delivery Protocols</label>
+                    <select id="channels" multiple style="height: 80px;">
+                        <option value="email" selected>EMAIL</option>
+                        <option value="sms">SMS (Twilio)</option>
+                        <option value="push">MOBILE PUSH</option>
+                    </select>
+                    <small style="color:var(--text-muted); font-size:0.7rem; margin-top:5px; display:block;">Hold Ctrl/Cmd to select multiple</small>
+                </div>
+
                 <div class="row">
-                    <div class="form-group">
-                        <label>Target User ID</label>
-                        <input type="text" id="noti-user-id" value="user_web_123">
-                    </div>
                     <div class="form-group">
                         <label>Payload Priority</label>
-                        <select id="noti-priority">
-                            <option value="critical">Critical (0)</option>
-                            <option value="high">High (1)</option>
-                            <option value="normal" selected>Normal (2)</option>
-                            <option value="low">Low (3)</option>
+                        <select id="priority">
+                            <option value="critical">CRITICAL</option>
+                            <option value="normal" selected>NORMAL</option>
+                            <option value="low">LOW</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Broadcast Channels (Select Multiple)</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="email" checked> Email</label>
-                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="sms"> SMS</label>
-                        <label class="checkbox-label"><input type="checkbox" class="channel-cb" value="push"> Push App</label>
+                    <div class="form-group">
+                        <label>Idempotency Key</label>
+                        <input type="text" id="idem_key" placeholder="auto-gen if empty">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Template Message Layout</label>
-                    <textarea id="noti-body">Hey {{name}}, security perimeter breached at {{location}}!</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Injected Variables (JSON)</label>
-                    <textarea id="noti-vars" style="min-height: 50px;">{"name": "Varshith", "location": "Sector 7"}</textarea>
+                    <label>Message Content (supports {{name}} template)</label>
+                    <textarea id="msg_body" rows="3" placeholder="Hello {{name}}, your order is ready!">Hello world from Klarixa!</textarea>
                 </div>
 
-                <button onclick="dispatchBroadcast()">Execute Broadcast</button>
-                <div id="dispatch-log" class="log-box">Standing by...</div>
+                <button onclick="sendNotification()">Broadcast Event</button>
             </div>
 
-            <!-- Single Lookup Feature -->
+            <!-- User Preferences -->
             <div class="card">
-                <h2>Query Single Blueprint Ticket</h2>
-                <p class="desc">Lookup a specific database task strictly by its returned integer ID.</p>
-                <div class="row">
-                    <input type="text" id="lookup-id" placeholder="Enter Task ID number (e.g. 1)">
-                    <button class="secondary" style="margin-top: 0;" onclick="lookupID()">Query DB</button>
-                </div>
-                <div id="lookup-log" class="log-box" style="margin-top: 1rem; color: #cbd5e1;">Awaiting parameter...</div>
-            </div>
-
-        </div>
-
-        <!-- RIGHT COLUMN: Preferences & History -->
-        <div style="display: flex; flex-direction: column; gap: 2rem;">
-            
-            <!-- Preferences Setup -->
-            <div class="card">
-                <h2>Database Interception Rules</h2>
-                <p class="desc">Simulate a user revoking consent. Any opted-out payload will natively bounce before it leaves the server.</p>
+                <h2>Identity Config</h2>
+                <p class="desc">Manage opt-out registers and channel mapping for specific identity nodes in the database.</p>
                 
-                <div class="row">
-                    <div class="form-group">
-                        <label>User ID</label>
-                        <input type="text" id="pref-user-id" value="user_web_123">
-                    </div>
-                    <div class="form-group">
-                        <label>Channel Target</label>
-                        <select id="pref-channel">
-                            <option value="email">Email Routing</option>
-                            <option value="sms">SMS Protocol</option>
-                            <option value="push">Push Notification</option>
-                        </select>
+                <div class="form-group">
+                    <label>Identity Node</label>
+                    <input type="text" id="pref-user-id" value="user_web_123">
+                </div>
+
+                <div class="form-group">
+                    <label>Active Channels</label>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="pref-email" checked> Email
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="pref-sms" checked> SMS
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="pref-push" checked> Push
+                        </label>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label>Consent Status Toggle</label>
-                        <select id="pref-toggle">
-                            <option value="true">Opt-In (Allow Transmissions)</option>
-                            <option value="false">Opt-Out (Block Silently)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <button onclick="setPreference()">Apply DB Constraint</button>
-                    <button class="secondary" onclick="fetchPreferences()">Audit Live Rules</button>
-                </div>
-                <div id="pref-log" class="log-box" style="color: #cbd5e1;">Ready.</div>
+                <button class="secondary" onclick="updatePreferences()">Synchronize Preferences</button>
             </div>
 
             <!-- Live History Telemetry -->
@@ -304,155 +392,130 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Webhook Management Panel -->
+            <div class="card">
+                <h2>Integrations (Webhooks)</h2>
+                <p class="desc">Register dynamic HTTP endpoints to receive status callbacks for your notifications.</p>
+
+                <div class="form-group">
+                    <label>Webhook URL</label>
+                    <input type="text" id="webhook-url" placeholder="https://your-api.com/webhooks/klarixa">
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <label>Target User ID (Optional)</label>
+                        <input type="text" id="webhook-user-id" placeholder="All users">
+                    </div>
+                    <div class="form-group">
+                        <label>HMAC Secret (Optional)</label>
+                        <input type="password" id="webhook-secret" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Events to Subscribe</label>
+                    <div class="checkbox-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="event-sent" checked> SENT
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="event-failed" checked> FAILED
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="registerWebhook()">Register Endpoint</button>
+
+                <div class="table-container" style="margin-top: 2rem;">
+                    <h3>Active Endpoints</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Target</th>
+                                <th>Events</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="webhook-list-body">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Syncing registry...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             
         </div>
-
     </div>
 
-    <!-- Hidden Toast Notification Element -->
-    <div id="toast" class="toast">
-        <span id="toast-icon">✅</span>
-        <span id="toast-msg">Success</span>
-    </div>
+    <div id="toast" class="toast">Action completed successfully</div>
 
     <script>
-        const API_BASE = 'http://127.0.0.1:8000';
+        const API_BASE = "http://127.0.0.1:8000"; // Point to backend server 
 
-        // GUI Toaster Core
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').textContent = message;
-            document.getElementById('toast-icon').textContent = isError ? '❌' : '✅';
-            
-            toast.className = `toast show ${isError ? 'error' : ''}`;
-            setTimeout(() => toast.classList.remove('show'), 3500);
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? 'var(--danger)' : 'var(--primary)';
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
         }
 
-        // Fetch Wrapper mapping native JSON responses and errors safely
-        async function apiCall(url, options = {}) {
-            try {
-                const res = await fetch(url, options);
-                let data = null;
-                try { data = await res.json(); } catch(e) {}
-                
-                if (!res.ok) {
-                    const desc = data?.detail ? JSON.stringify(data.detail) : 'Server Crashed';
-                    throw new Error(`[HTTP ${res.status}] ${desc}`);
-                }
-                return data;
-            } catch (err) {
-                showToast(err.message, true);
-                throw err;
+        async function apiCall(url, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' }
+            };
+            if (body) options.body = JSON.stringify(body);
+            
+            const res = await fetch(url, options);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'API failure');
             }
+            if (res.status === 204) return null;
+            return res.json();
         }
 
-        /* ----- ACTION: Broadcast Notification ----- */
-        async function dispatchBroadcast() {
-            const logBox = document.getElementById('dispatch-log');
-            logBox.style.color = '#cbd5e1';
-            logBox.textContent = "Negotiating ASGI Transmission...";
-            
+        /* ----- ACTION: Send Notification ----- */
+        async function sendNotification() {
             try {
-                // Collect multiple channels safely
-                const channels = Array.from(document.querySelectorAll('.channel-cb:checked')).map(cb => cb.value);
-                if (channels.length === 0) throw new Error("CRITICAL: You must manually select at least one pipeline!");
-
-                // Validating standard JSON string templates
-                let vars = {};
-                const varsInput = document.getElementById('noti-vars').value.trim();
-                if(varsInput) vars = JSON.parse(varsInput);
-
+                const channels = Array.from(document.getElementById('channels').selectedOptions).map(o => o.value);
                 const payload = {
-                    user_id: document.getElementById('noti-user-id').value,
-                    channels: channels, // Automatically handles multi-posting natively!
-                    priority: document.getElementById('noti-priority').value,
-                    message_body: document.getElementById('noti-body').value,
-                    template_vars: vars,
-                    idempotency_key: "WEB_UI_" + Date.now() 
+                    user_id: document.getElementById('user_id').value,
+                    channels: channels,
+                    priority: document.getElementById('priority').value,
+                    message_body: document.getElementById('msg_body').value,
+                    template_vars: { name: "User" } 
                 };
-
-                const data = await apiCall(`${API_BASE}/notifications/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                logBox.style.color = '#10b981';
-                logBox.textContent = `[SUCCESS] Created ${data.length} task(s) asynchronously!\nRoot ID Tracked: #${data[0].id}\nStatus Flag: ${data[0].status.toUpperCase()}`;
-                showToast(`Broadcast Fired successfully to ${data.length} pipelines!`);
                 
-                // Keep GUI dynamic
-                document.getElementById('hist-user-id').value = payload.user_id;
-                document.getElementById('pref-user-id').value = payload.user_id;
-                setTimeout(fetchHistory, 1200); // Wait 1 second exactly for backend priority simulation to physically land before polling
+                const idem = document.getElementById('idem_key').value;
+                if (idem) payload.idempotency_key = idem;
 
+                const data = await apiCall(`${API_BASE}/notifications/`, 'POST', payload);
+                showToast('Event Broadcasted Successfully!');
+                fetchHistory(1);
             } catch (error) {
-                logBox.style.color = '#ef4444';
-                logBox.textContent = `[FAILED] ${error.message}`;
+                showToast(error.message, true);
             }
         }
 
-        /* ----- ACTION: Query Single ID Tasks ----- */
-        async function lookupID() {
-            const logBox = document.getElementById('lookup-log');
-            const idVal = document.getElementById('lookup-id').value;
-            if(!idVal) return showToast("Provide a numeric ID", true);
-
-            logBox.textContent = "Searching indexes...";
-            try {
-                const data = await apiCall(`${API_BASE}/notifications/${idVal}`);
-                logBox.style.color = '#10b981';
-                logBox.textContent = `Retrieved Ticket #${data.id}\nRouting: ${data.channel.toUpperCase()} (${data.priority})\nStatus: ${data.status.toUpperCase()}\nRetries Flushed: ${data.retry_count}\nRendered Message: "${data.message_body}"`;
-            } catch (error) {
-                logBox.style.color = '#ef4444';
-                logBox.textContent = error.message;
-            }
-        }
-
-        /* ----- ACTION: Toggle Consent Settings  ----- */
-        async function setPreference() {
-            const logBox = document.getElementById('pref-log');
+        /* ----- ACTION: Update Preferences ----- */
+        async function updatePreferences() {
             try {
                 const userId = document.getElementById('pref-user-id').value;
                 const payload = {
-                    channel: document.getElementById('pref-channel').value,
-                    is_opted_in: document.getElementById('pref-toggle').value === 'true'
+                    user_id: userId,
+                    email_enabled: document.getElementById('pref-email').checked,
+                    sms_enabled: document.getElementById('pref-sms').checked,
+                    push_enabled: document.getElementById('pref-push').checked,
                 };
-
-                const data = await apiCall(`${API_BASE}/users/${userId}/preferences`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                logBox.style.color = '#10b981';
-                logBox.textContent = `Database Constraint Engaged!\nTarget: ${data.channel.toUpperCase()}\nConsent Override: ${data.is_opted_in ? 'ALLOW' : 'DENY'}`;
-                showToast(`Consent rules updated safely`);
+                await apiCall(`${API_BASE}/users/preferences`, 'POST', payload);
+                showToast('Identity Preferences Synchronized');
             } catch (error) {
-                logBox.style.color = '#ef4444';
-                logBox.textContent = error.message;
-            }
-        }
-
-        /* ----- ACTION: View Live Consent Matrix ----- */
-        async function fetchPreferences() {
-            const logBox = document.getElementById('pref-log');
-            logBox.style.color = '#cbd5e1';
-            try {
-                const userId = document.getElementById('pref-user-id').value;
-                const data = await apiCall(`${API_BASE}/users/${userId}/preferences`);
-                
-                if (data.length === 0) {
-                    logBox.textContent = "[!] Administrator Warning: Zero constraints defined. System natively defaults to PERMIT ALL completely.";
-                } else {
-                    let dump = "Active Live Filters Found:\n";
-                    data.forEach(p => dump += `> ${p.channel.toUpperCase()}: ${p.is_opted_in ? '🟩 ALLOW' : '🟥 DENY'}\n`);
-                    logBox.textContent = dump;
-                }
-                showToast('Audit complete');
-            } catch (error) {
-                logBox.style.color = '#ef4444';
-                logBox.textContent = error.message;
+                showToast(error.message, true);
             }
         }
 
@@ -463,7 +526,7 @@
             fetchHistory(_currentPage);
         }
 
-        /* ----- ACTION: Refresh Live Tracking Table ----- */
+        /* ----- ACTION: Refresh Telemetry ----- */
         async function fetchHistory(page = 1) {
             _currentPage = page;
             const tbody = document.getElementById('history-body');
@@ -500,24 +563,91 @@
                     tbody.appendChild(tr);
                 });
 
-                // Show pagination controls
+                // Pagination
                 const controls = document.getElementById('pagination-controls');
                 controls.style.display = 'flex';
                 document.getElementById('pagination-info').textContent = 
-                    `Page ${data.page} of ${data.total_pages}  ·  ${data.total} total record(s)`;
+                    `Page ${data.page} of ${data.total_pages} · ${data.total} total`;
                 document.getElementById('btn-prev').disabled = !data.has_prev;
-                document.getElementById('btn-prev').style.opacity = data.has_prev ? '1' : '0.4';
                 document.getElementById('btn-next').disabled = !data.has_next;
-                document.getElementById('btn-next').style.opacity = data.has_next ? '1' : '0.4';
                 
-                showToast(`Page ${page}/${data.total_pages} — ${data.total} total records`);
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Error: ${error.message}</td></tr>`;
             }
         }
 
-        // Initialize natively immediately smoothly
-        window.addEventListener('load', () => setTimeout(fetchHistory, 300));
+        /* ----- ACTION: Webhook Management ----- */
+        async function fetchWebhooks() {
+            const tbody = document.getElementById('webhook-list-body');
+            try {
+                const data = await apiCall(`${API_BASE}/webhooks/`);
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No webhooks registered.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = '';
+                data.forEach(h => {
+                    const tr = document.createElement('tr');
+                    const statusLabel = h.is_active ? 
+                        '<span style="color:var(--success)">● Active</span>' : 
+                        '<span style="color:var(--text-muted)">○ Paused</span>';
+                    
+                    tr.innerHTML = `
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${h.url}</td>
+                        <td>${h.user_id || 'Global'}</td>
+                        <td>${h.events.toUpperCase()}</td>
+                        <td>${statusLabel}</td>
+                        <td>
+                            <div style="display:flex; gap: 0.5rem;">
+                                <button style="padding: 0.3rem 0.5rem; font-size: 0.7rem;" class="secondary" onclick="toggleWebhook(${h.id})">Toggle</button>
+                                <button style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: var(--danger);" onclick="deleteWebhook(${h.id})">Del</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5">Error loading webhooks</td></tr>`;
+            }
+        }
+
+        async function registerWebhook() {
+            try {
+                const events = [];
+                if (document.getElementById('event-sent').checked) events.push('sent');
+                if (document.getElementById('event-failed').checked) events.push('failed');
+                
+                const payload = {
+                    url: document.getElementById('webhook-url').value,
+                    events: events,
+                    user_id: document.getElementById('webhook-user-id').value || null,
+                    secret: document.getElementById('webhook-secret').value || null
+                };
+
+                if (!payload.url) throw new Error("URL is required");
+                
+                await apiCall(`${API_BASE}/webhooks/`, 'POST', payload);
+                showToast('Webhook Registered Successfully');
+                fetchWebhooks();
+            } catch (error) {
+                showToast(error.message, true);
+            }
+        }
+
+        async function toggleWebhook(id) {
+            await apiCall(`${API_BASE}/webhooks/${id}/toggle`, 'PATCH');
+            fetchWebhooks();
+        }
+
+        async function deleteWebhook(id) {
+            if (confirm("Delete this webhook integration?")) {
+                await apiCall(`${API_BASE}/webhooks/${id}`, 'DELETE');
+                fetchWebhooks();
+            }
+        }
+
+        // Initial Load
+        fetchWebhooks();
     </script>
 </body>
 </html>

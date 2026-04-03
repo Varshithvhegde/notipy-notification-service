@@ -54,3 +54,8 @@ async def client(init_db):
         base_url="http://test"
     ) as ac:
         yield ac
+
+@pytest.fixture
+async def db_session():
+    async with TestSessionLocal() as session:
+        yield session
