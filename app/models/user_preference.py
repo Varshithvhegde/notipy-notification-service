@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, UniqueConstraint
 from .base_class import Base
 
 class UserPreference(Base):
@@ -8,3 +8,7 @@ class UserPreference(Base):
     user_id = Column(String, index=True)
     channel = Column(String)  # 'email', 'sms', 'push'
     is_opted_in = Column(Boolean, default=True)
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'channel', name='_user_channel_uc'),
+    )

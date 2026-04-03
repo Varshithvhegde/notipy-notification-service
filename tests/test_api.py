@@ -23,7 +23,7 @@ def test_notification_creation_and_idempotency(client):
     """Submits a full notification request to the queue and inherently validates idempotency logic blocks."""
     payload = {
         "user_id": "test_idem_user",
-        "channel": "email",
+        "channels": ["email"],
         "priority": "normal",
         "message_body": "This is a purely automated Pytest payload.",
         "idempotency_key": "unique_pytest_key_10x"
@@ -32,7 +32,7 @@ def test_notification_creation_and_idempotency(client):
     # Fire Request 1
     res1 = client.post("/notifications/", json=payload)
     assert res1.status_code == 200
-    data = res1.json()
+    data = res1.json()[0]
     assert data["message_body"] == "This is a purely automated Pytest payload."
     assert "id" in data
     
@@ -41,15 +41,15 @@ def test_notification_creation_and_idempotency(client):
     assert res2.status_code == 200
     
     # Both IDs mapped exactly the same (meaning the database didn't actually insert duplicate rows)
-    assert res1.json()["id"] == res2.json()["id"]
+    assert res1.json()[0]["id"] == res2.json()[0]["id"]
 
 def test_user_notification_history(client):
     """Check retrieving lists from user queries."""
     user_id = "history_pytest_user"
     
     # Create 2 unique messages
-    client.post("/notifications/", json={"user_id": user_id, "channel": "push", "message_body": "Message 1", "idempotency_key": "hist1"})
-    client.post("/notifications/", json={"user_id": user_id, "channel": "push", "message_body": "Message 2", "idempotency_key": "hist2"})
+    client.post("/notifications/", json={"user_id": user_id, "channels": ["push"], "message_body": "Message 1", "idempotency_key": "hist1"})
+    client.post("/notifications/", json={"user_id": user_id, "channels": ["push"], "message_body": "Message 2", "idempotency_key": "hist2"})
     
     res = client.get(f"/notifications/user/{user_id}")
     assert res.status_code == 200
@@ -68,7 +68,7 @@ def test_validation_error_on_bad_channel(client):
     """Verifies Pydantic catches bad ENUM channels immediately."""
     payload = {
         "user_id": "test_bad_channel",
-        "channel": "slack", # Not in ['email', 'sms', 'push']
+        "channels": ["slack"], # Not in ['email', 'sms', 'push']
         "priority": "normal",
         "message_body": "Will fail schema validation"
     }
@@ -82,7 +82,7 @@ def test_api_rate_limiter_edge(client):
     """Spams the API via test client to ensure 429 status code translates to the requester."""
     payload = {
         "user_id": "spam_pytest_user",
-        "channel": "email",
+        "channels": ["email"],
         "priority": "low",
         "message_body": "Spam"
     }

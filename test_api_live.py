@@ -43,7 +43,7 @@ def test_notifications():
     # 1. Send Notification
     payload = {
         "user_id": user_id,
-        "channel": "email",
+        "channels": ["email", "push"],
         "priority": "high",
         "message_body": "Hello {{name}}, your order has shipped!",
         "template_vars": {"name": "Varshith"},
@@ -55,8 +55,8 @@ def test_notifications():
         response = requests.post(f"{BASE_URL}/notifications/", json=payload)
         response.raise_for_status()
         data = response.json()
-        noti_id = data["id"]
-        print(f"[+] Success! Notification created with status: {data['status']}, ID: {noti_id}")
+        noti_id = data[0]["id"]
+        print(f"[+] Success! Generated {len(data)} notifications simultaneously. First status: {data[0]['status']}, ID: {noti_id}")
     except requests.exceptions.RequestException as e:
         print(f"[-] Failed to create notification: {e}")
 
@@ -85,7 +85,7 @@ def test_background_worker():
 
     payload = {
         "user_id": user_id,
-        "channel": "email",
+        "channels": ["email"],
         "priority": "critical",
         "message_body": "Priority dispatch test via Worker!",
         "idempotency_key": f"key_worker_{int(time.time())}"
@@ -94,7 +94,7 @@ def test_background_worker():
     try:
         res = requests.post(f"{BASE_URL}/notifications/", json=payload)
         res.raise_for_status()
-        noti_id = res.json()["id"]
+        noti_id = res.json()[0]["id"]
         print(f"[*] Dispatching to worker... created ID: {noti_id} (Status: pending)")
         
         print("[*] Waiting 1 second for worker to process...")
@@ -112,7 +112,7 @@ def test_idempotency_and_retries():
 
     payload = {
         "user_id": user_id,
-        "channel": "push",
+        "channels": ["push", "sms"],
         "priority": "normal",
         "message_body": "Checking idempotency...",
         "idempotency_key": idempotency_key
@@ -121,20 +121,20 @@ def test_idempotency_and_retries():
     try:
         print(f"[*] Request 1 with key '{idempotency_key}'...")
         res1 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
-        print(f"[+] Created ID: {res1['id']}")
+        print(f"[+] Created IDs: {res1[0]['id']} & {res1[1]['id']}")
 
         print(f"[*] Request 2 with identical key...")
         res2 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
-        print(f"[+] Returned ID: {res2['id']}")
+        print(f"[+] Returned IDs: {res2[0]['id']} & {res2[1]['id']}")
         
-        if res1["id"] == res2["id"]:
+        if res1[0]["id"] == res2[0]["id"]:
             print("[+] SUCCESS: Idempotency logic intercepted the duplicate request!")
         else:
             print("[-] FAILURE: Idempotency check did not catch duplicate.")
             
         print("[*] Let's check tracking schema features (delaying 2s explicitly to allow workers/retries)...")
         time.sleep(2)
-        chk = requests.get(f"{BASE_URL}/notifications/{res1['id']}").json()
+        chk = requests.get(f"{BASE_URL}/notifications/{res1[0]['id']}").json()
         print(f"[+] Delivery Status: {chk['status']}")
         print(f"[+] Number of Retries Executed: {chk.get('retry_count', 0)}")
         if chk.get('error_message'):
@@ -148,7 +148,7 @@ def test_rate_limiter():
     user_id = "spam_user_99"
     payload = {
         "user_id": user_id,
-        "channel": "push",
+        "channels": ["push"],
         "priority": "low",
         "message_body": "Spam message overload...",
         "idempotency_key": None

@@ -3,11 +3,13 @@ from typing import Optional, Literal
 from datetime import datetime
 from app.models.notification import NotificationStatus, NotificationPriority
 
+from typing import Optional, Literal, List
+
 ChannelType = Literal['email', 'sms', 'push']
 
 class NotificationCreate(BaseModel):
     user_id: str
-    channel: ChannelType
+    channels: List[ChannelType]
     priority: NotificationPriority = NotificationPriority.NORMAL
     message_body: str
     idempotency_key: Optional[str] = None
