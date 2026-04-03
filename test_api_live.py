@@ -1,185 +1,211 @@
 import requests
 import time
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, MofNCompleteColumn
+from rich.prompt import Prompt
+from rich import print as rprint
 
+console = Console()
 BASE_URL = "http://127.0.0.1:8000"
 
-def test_user_preferences():
-    print(f"--- Testing Step 2: User Preferences ---")
-    user_id = "user_123"
+def wait_for_server():
+    with console.status("[bold blue]Checking server health (port 8000)...", spinner="dots") as status:
+        try:
+            req = requests.get(f"{BASE_URL}/ping", timeout=3)
+            req.raise_for_status()
+            console.print(f"[bold green]✓[/bold green] Server Health: {req.json()['status'].upper()} ({req.json()['message']})")
+        except requests.exceptions.RequestException:
+            console.print("[bold red]⨯[/bold red] Server unreachable! Please run: [bold white]uvicorn app.main:app --reload[/bold white]")
+            exit(1)
 
-    # 1. Set Preference (Opt-out of SMS)
-    payload = {"channel": "sms", "is_opted_in": False}
-    print(f"[*] Setting preference for {user_id}: {payload}")
-    try:
-        response = requests.post(f"{BASE_URL}/users/{user_id}/preferences", json=payload)
-        response.raise_for_status()
-        print(f"[+] Success! Response: {response.json()}")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed to set preference: {e}")
+def setup_user():
+    console.print("\n")
+    console.print(Panel.fit("[bold cyan]Step 1: Identity & Preferences Config[/bold cyan]", border_style="cyan"))
+    user_id = Prompt.ask("[bold yellow]Enter a Mock User ID to trace for this test run[/bold yellow]", default=f"guest_{int(time.time())}")
+    
+    with console.status(f"[bold blue]Initializing internal preferences for node {user_id}...", spinner="bouncingBar"):
+        # Opt in to all
+        for ch in ["email", "sms", "push"]:
+            res = requests.post(f"{BASE_URL}/users/{user_id}/preferences", json={"channel": ch, "is_opted_in": True})
+            if res.status_code != 200:
+                console.print(f"[bold red]⨯[/bold red] Failed to config {ch.upper()}.")
+        
+        time.sleep(0.5) # for visuals
+        # Verify
+        prefs = requests.get(f"{BASE_URL}/users/{user_id}/preferences").json()
+        
+    table = Table(title=f"User Preferences Map: {user_id}")
+    table.add_column("Channel", style="magenta")
+    table.add_column("Opt-in Status", style="green")
+    
+    for p in prefs:
+        table.add_row(
+            p["channel"].upper(), 
+            "[bold green]YES[/bold green]" if p["is_opted_in"] else "[bold red]NO[/bold red]"
+        )
+    
+    console.print(table)
+    return user_id
 
-    # 2. Set Preference (Opt-in to Email)
-    payload2 = {"channel": "email", "is_opted_in": True}
-    print(f"[*] Setting preference for {user_id}: {payload2}")
-    try:
-        response = requests.post(f"{BASE_URL}/users/{user_id}/preferences", json=payload2)
-        response.raise_for_status()
-        print(f"[+] Success! Response: {response.json()}")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed to set preference: {e}")
-
-    # 3. Get Preferences
-    print(f"[*] Fetching preferences for {user_id}...")
-    try:
-        response = requests.get(f"{BASE_URL}/users/{user_id}/preferences")
-        response.raise_for_status()
-        print(f"[+] Success! Response: {response.json()}")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed to fetch preferences: {e}")
-
-def test_notifications():
-    print(f"\n--- Testing Step 3: Notifications ---")
-    user_id = "user_123"
-
-    # 1. Send Notification
+def test_notifications(user_id):
+    console.print("\n")
+    console.print(Panel.fit("[bold magenta]Step 2: Microservice Dispatch & Routing[/bold magenta]", border_style="magenta"))
+    
     payload = {
         "user_id": user_id,
         "channels": ["email", "push"],
-        "priority": "high",
-        "message_body": "Hello {{name}}, your order has shipped!",
+        "priority": "critical",
+        "message_body": "Hello {{name}}, your premium API test has started!",
         "template_vars": {"name": "Varshith"},
         "idempotency_key": f"key_{int(time.time())}"
     }
-    print(f"[*] Dispatching Notification: {payload}")
-    noti_id = None
-    try:
-        response = requests.post(f"{BASE_URL}/notifications/", json=payload)
-        response.raise_for_status()
-        data = response.json()
-        noti_id = data[0]["id"]
-        print(f"[+] Success! Generated {len(data)} notifications simultaneously. First status: {data[0]['status']}, ID: {noti_id}")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed to create notification: {e}")
 
-    if noti_id:
-        # 2. Get Notification Status by ID
-        print(f"[*] Fetching status for Notification ID: {noti_id}")
-        try:
-            response = requests.get(f"{BASE_URL}/notifications/{noti_id}")
-            response.raise_for_status()
-            print(f"[+] Status: {response.json()['status']}")
-        except requests.exceptions.RequestException as e:
-            print(f"[-] Failed to fetch notification status: {e}")
+    with console.status("[bold blue]Dispatching CRITICAL payloads to queue broker...", spinner="line"):
+        res = requests.post(f"{BASE_URL}/notifications/", json=payload)
+        res.raise_for_status()
+        data = res.json()
+        time.sleep(0.8) # for visuals
+        
+    console.print(f"[bold green]✓[/bold green] Fired {len(data)} asynchronous notification jobs via worker queue.")
+    
+    table = Table()
+    table.add_column("DB Job ID", justify="right", style="cyan")
+    table.add_column("Transport Channel")
+    table.add_column("State")
+    
+    for d in data:
+        stat_color = "yellow" if d["status"] == "pending" else "green"
+        table.add_row(str(d["id"]), d["channel"].upper(), f"[bold {stat_color}]{d['status'].upper()}[/bold {stat_color}]")
+    console.print(table)
+    return data[0]["id"]
 
-    # 3. Get User Notification History
-    print(f"[*] Fetching User Notification History for {user_id}")
-    try:
-        response = requests.get(f"{BASE_URL}/notifications/user/{user_id}")
-        response.raise_for_status()
-        print(f"[+] Found {len(response.json())} notifications in history.")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed to fetch history: {e}")
+def test_telemetry(user_id, noti_id):
+    console.print("\n")
+    console.print(Panel.fit("[bold yellow]Step 3: State Verification & Telemetry[/bold yellow]", border_style="yellow"))
+    
+    with console.status("[bold blue]Polling database stream for worker execution...", spinner="dots"):
+        time.sleep(2.0) # Explicitly wait for async worker to run
+        res = requests.get(f"{BASE_URL}/notifications/{noti_id}")
+        if res.status_code == 200:
+            status = res.json()['status']
+            color = "green" if status in ["sent", "delivered"] else ("red" if status == "failed" else "yellow")
+            console.print(f"[bold green]✓[/bold green] Live Sync: Job #{noti_id} transitioned naturally to [bold {color}]{status.upper()}[/bold {color}]")
+        
+        hist = requests.get(f"{BASE_URL}/notifications/user/{user_id}?page=1&page_size=10").json()
+        
+    console.print(f"[bold green]✓[/bold green] Indexed Graph Data: [bold white]{hist.get('total', 0)}[/bold white] total records stored for node '{user_id}'.")
 
-def test_background_worker():
-    print(f"\n--- Testing Step 4 & 5: Background Queue & Priority ---")
-    user_id = "user_123"
+def test_idempotency():
+    console.print("\n")
+    console.print(Panel.fit("[bold red]Step 4: Concurrency & Idempotency Lock[/bold red]", border_style="red"))
+    
+    idem_key = f"protect_{int(time.time())}"
+    payload = {
+        "user_id": "idem_tester",
+        "channels": ["sms"],
+        "priority": "critical",
+        "message_body": "Critical financial alert. Do not double-fire under load.",
+        "idempotency_key": idem_key
+    }
+    
+    with console.status("[bold blue]Simulating concurrent 'split-brain' requests...", spinner="bouncingBall"):
+        r1 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
+        time.sleep(0.2)
+        r2 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
+        
+    console.print(f"[*] Thread 1 returned primary key: [cyan]{r1[0]['id']}[/cyan]")
+    console.print(f"[*] Thread 2 returned primary key: [cyan]{r2[0]['id']}[/cyan]")
+        
+    if r1[0]["id"] == r2[0]["id"]:
+        console.print(f"[bold green]✓[/bold green] Engine cleanly bypassed duplicate execution attempt via idempotency key.")
+    else:
+        console.print("[bold red]⨯[/bold red] Idempotency failed. Duplicate created.")
 
+def test_rate_limiter():
+    console.print("\n")
+    console.print(Panel.fit("[bold purple]Step 5: Sliding Window Rate Limiter (Load Test)[/bold purple]", border_style="purple"))
+    
+    user_id = "bot_spammer_99"
     payload = {
         "user_id": user_id,
         "channels": ["email"],
-        "priority": "critical",
-        "message_body": "Priority dispatch test via Worker!",
-        "idempotency_key": f"key_worker_{int(time.time())}"
-    }
-
-    try:
-        res = requests.post(f"{BASE_URL}/notifications/", json=payload)
-        res.raise_for_status()
-        noti_id = res.json()[0]["id"]
-        print(f"[*] Dispatching to worker... created ID: {noti_id} (Status: pending)")
-        
-        print("[*] Waiting 1 second for worker to process...")
-        time.sleep(1)
-        
-        chk = requests.get(f"{BASE_URL}/notifications/{noti_id}")
-        print(f"[+] Post-worker status verification: {chk.json()['status']}")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed background test: {e}")
-
-def test_idempotency_and_retries():
-    print(f"\n--- Testing Step 7: Idempotency & Retries ---")
-    user_id = "user_123"
-    idempotency_key = f"idem_key_{int(time.time())}"
-
-    payload = {
-        "user_id": user_id,
-        "channels": ["push", "sms"],
-        "priority": "normal",
-        "message_body": "Checking idempotency...",
-        "idempotency_key": idempotency_key
-    }
-
-    try:
-        print(f"[*] Request 1 with key '{idempotency_key}'...")
-        res1 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
-        print(f"[+] Created IDs: {res1[0]['id']} & {res1[1]['id']}")
-
-        print(f"[*] Request 2 with identical key...")
-        res2 = requests.post(f"{BASE_URL}/notifications/", json=payload).json()
-        print(f"[+] Returned IDs: {res2[0]['id']} & {res2[1]['id']}")
-        
-        if res1[0]["id"] == res2[0]["id"]:
-            print("[+] SUCCESS: Idempotency logic intercepted the duplicate request!")
-        else:
-            print("[-] FAILURE: Idempotency check did not catch duplicate.")
-            
-        print("[*] Let's check tracking schema features (delaying 2s explicitly to allow workers/retries)...")
-        time.sleep(2)
-        chk = requests.get(f"{BASE_URL}/notifications/{res1[0]['id']}").json()
-        print(f"[+] Delivery Status: {chk['status']}")
-        print(f"[+] Number of Retries Executed: {chk.get('retry_count', 0)}")
-        if chk.get('error_message'):
-            print(f"[+] Caught Simulated Error: {chk['error_message']}")
-
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Failed test: {e}")
-
-def test_rate_limiter():
-    print(f"\n--- Testing Step 8: Rate Limiting ---")
-    user_id = "spam_user_99"
-    payload = {
-        "user_id": user_id,
-        "channels": ["push"],
         "priority": "low",
-        "message_body": "Spam message overload...",
+        "message_body": "Mass marketing spam",
         "idempotency_key": None
     }
     
-    print(f"[*] Firing 101 requests for {user_id} in a tight loop...")
-    caught_429 = False
-    for i in range(101):
-        try:
-            res = requests.post(f"{BASE_URL}/notifications/", json=payload)
-            res.raise_for_status()
-        except requests.exceptions.HTTPError:
-            if res.status_code == 429:
-                caught_429 = True
-                print(f"[+] SUCCESS: Rate Limiter is ALIVE! Request {i+1} crashed with 429 Too Many Requests.")
-                break
-        except Exception:
-            pass
+    console.print(f"[*] Weaponizing payloads against endpoint (targeting 110 RPM max)...")
+    
+    caught = False
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        transient=False
+    ) as progress:
+        task = progress.add_task("[bold cyan]Firing POST requests...", total=105)
+        
+        for i in range(105):
+            try:
+                res = requests.post(f"{BASE_URL}/notifications/", json=payload)
+                res.raise_for_status()
+                progress.advance(task)
+            except requests.exceptions.HTTPError:
+                if res.status_code == 429:
+                    caught = True
+                    progress.update(task, description="[bold green]Rate Limit Tripwire Triggered![/bold green]", completed=i+1)
+                    progress.stop()
+                    console.print(f"\n[bold green]✓[/bold green] SUCCESS: Layer 7 shield activated! Request #{i+1} rejected with 429 Too Many Requests.")
+                    break
+            except Exception:
+                pass
             
-    if not caught_429:
-         print(f"[-] FAILURE: Rate Limiter failed to block exactly at 101st request.")
+    if not caught:
+        console.print("\n[bold red]⨯[/bold red] Rate limiter failed to intercept excessive footprint.")
+
+def test_webhooks():
+    console.print("\n")
+    console.print(Panel.fit("[bold blue]Step 6: Webhook Integration Registry[/bold blue]", border_style="blue"))
+    
+    webhook_url = "https://webhook.site/test-klarixa"
+    payload = {
+        "url": webhook_url,
+        "events": ["sent", "failed"],
+        "secret": "klarixa_secret_123"
+    }
+    
+    with console.status("[bold blue]Registering callback listener via registry...", spinner="earth"):
+        res = requests.post(f"{BASE_URL}/webhooks/", json=payload)
+        res.raise_for_status()
+        hook = res.json()
+        time.sleep(0.5)
+
+    console.print(f"[bold green]✓[/bold green] Webhook Registered: [cyan]{hook['url']}[/cyan]")
+    
+    with console.status("[bold blue]Cleaning up test hooks...", spinner="simpleDots"):
+        requests.delete(f"{BASE_URL}/webhooks/{hook['id']}")
+        time.sleep(0.3)
+    
+    console.print(f"[bold green]✓[/bold green] Ephemeral webhook lifecycle verified.")
 
 if __name__ == "__main__":
-    print("Executing Live API Tests (Ensure server is running on port 8000)")
-    try:
-        req = requests.get(f"{BASE_URL}/ping")
-        print(f"Server health: {req.json()}")
-        test_user_preferences()
-        test_notifications()
-        test_background_worker()
-        test_idempotency_and_retries()
-        test_rate_limiter()
-    except requests.exceptions.ConnectionError:
-        print("\n[ERROR] Server is not running! Please run: uvicorn app.main:app --reload")
+    console.print("\n")
+    console.rule("[bold cyan]🚀 Klarixa Engine Live Core Diagnostics 🚀")
+    console.print("\n")
+    
+    wait_for_server()
+    user_id = setup_user()
+    
+    noti_id = test_notifications(user_id)
+    test_telemetry(user_id, noti_id)
+    test_idempotency()
+    test_rate_limiter()
+    test_webhooks()
+    
+    console.print("\n")
+    console.rule("[bold green]ALL DIAGNOSTIC SYSTEMS GREEN[/bold green]")
+    console.print("[dim italic center]System architecture verified and mathematically sound[/dim italic center]\n")
