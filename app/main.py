@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from app.api.endpoints import users, notifications
 from app.db.database import engine
 from app.models.base_class import Base
+from app.core.logging import setup_logging
+
+setup_logging()
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

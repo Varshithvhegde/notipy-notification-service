@@ -6,11 +6,13 @@ from app.api.dependencies import get_db
 from app.models.notification import Notification, NotificationStatus
 from app.schemas.notification import NotificationCreate, NotificationResponse
 from app.workers.queue import notification_queue
+from app.core.rate_limiter import check_rate_limit
 
 router = APIRouter()
 
 @router.post("/", response_model=NotificationResponse)
 async def create_notification(noti: NotificationCreate, db: Session = Depends(get_db)):
+    check_rate_limit(noti.user_id)
     if noti.idempotency_key:
         existing = db.query(Notification).filter(Notification.idempotency_key == noti.idempotency_key).first()
         if existing:

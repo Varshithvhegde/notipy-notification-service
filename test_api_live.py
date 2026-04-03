@@ -143,6 +143,34 @@ def test_idempotency_and_retries():
     except requests.exceptions.RequestException as e:
         print(f"[-] Failed test: {e}")
 
+def test_rate_limiter():
+    print(f"\n--- Testing Step 8: Rate Limiting ---")
+    user_id = "spam_user_99"
+    payload = {
+        "user_id": user_id,
+        "channel": "push",
+        "priority": "low",
+        "message_body": "Spam message overload...",
+        "idempotency_key": None
+    }
+    
+    print(f"[*] Firing 101 requests for {user_id} in a tight loop...")
+    caught_429 = False
+    for i in range(101):
+        try:
+            res = requests.post(f"{BASE_URL}/notifications/", json=payload)
+            res.raise_for_status()
+        except requests.exceptions.HTTPError:
+            if res.status_code == 429:
+                caught_429 = True
+                print(f"[+] SUCCESS: Rate Limiter is ALIVE! Request {i+1} crashed with 429 Too Many Requests.")
+                break
+        except Exception:
+            pass
+            
+    if not caught_429:
+         print(f"[-] FAILURE: Rate Limiter failed to block exactly at 101st request.")
+
 if __name__ == "__main__":
     print("Executing Live API Tests (Ensure server is running on port 8000)")
     try:
@@ -152,5 +180,6 @@ if __name__ == "__main__":
         test_notifications()
         test_background_worker()
         test_idempotency_and_retries()
+        test_rate_limiter()
     except requests.exceptions.ConnectionError:
         print("\n[ERROR] Server is not running! Please run: uvicorn app.main:app --reload")
