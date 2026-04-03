@@ -1,6 +1,9 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
 from app.db.database import SessionLocal
 from app.models.notification import Notification, NotificationStatus
 from app.models.user_preference import UserPreference
@@ -52,7 +55,7 @@ class NotificationQueue:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Worker {worker_id} error: {e}")
+                logger.error(f"Worker {worker_id} error: {e}")
 
     def _render_template(self, body: str, variables_dict: dict) -> str:
         if not variables_dict or not body:
@@ -63,98 +66,67 @@ class NotificationQueue:
         return result
 
     async def _process(self, notification_id: int, template_vars: dict, attempt: int):
+        async with SessionLocal() as db:
+            # Fetch notification
+            result = await db.execute(
+                select(Notification).where(Notification.id == notification_id)
+            )
+            noti = result.scalars().first()
+            if not noti:
+                return
 
-        def db_process():
-            db = SessionLocal()
-            try:
-                noti = db.query(Notification).filter(Notification.id == notification_id).first()
-                if not noti:
-                    return None, None
-                
-                # Check user preferences
-                pref = db.query(UserPreference).filter(
+            # Check user preferences
+            pref_result = await db.execute(
+                select(UserPreference).where(
                     UserPreference.user_id == noti.user_id,
                     UserPreference.channel == noti.channel
-                ).first()
-                
-                is_opted_in = True
-                if pref:
-                    is_opted_in = pref.is_opted_in
-
-                return noti, is_opted_in
-            finally:
-                db.close()
-                
-        notification, is_opted_in = await asyncio.to_thread(db_process)
-        if not notification:
-            return
-
-        if not is_opted_in:
-            print(f"[{notification.channel.upper()}] User {notification.user_id} opted out. Skipping.")
-            return
-
-        channel = notification.channel
-        
-        try:
-            provider = get_provider(channel)
-            rendered_body = self._render_template(notification.message_body, template_vars)
-            
-            await provider.send(
-                user_id=notification.user_id,
-                body=rendered_body,
+                )
             )
+            pref = pref_result.scalars().first()
 
-            def mark_success():
-                db = SessionLocal()
-                try:
-                    noti = db.query(Notification).filter(Notification.id == notification_id).first()
-                    if noti:
-                        noti.status = NotificationStatus.SENT
-                        noti.sent_at = datetime.now(timezone.utc)
-                        noti.retry_count = attempt - 1
-                        noti.message_body = rendered_body
-                        db.commit()
-                finally:
-                    db.close()
+            if pref and not pref.is_opted_in:
+                logger.info(f"[{noti.channel.upper()}] User {noti.user_id} opted out. Skipping.")
+                return
 
-            await asyncio.to_thread(mark_success)
-            print(f"[{channel.upper()}] Delivered notification -> user={notification.user_id} on attempt {attempt}")
-            
-        except Exception as e:
-            error_msg = str(e)
-            print(f"Failed to deliver: {error_msg} (Attempt {attempt})")
-            
-            if attempt < 3: # MAX_RETRIES
-                delay = 1.0 * (2 ** (attempt - 1))
-                def mark_retry():
-                    db = SessionLocal()
-                    try:
-                        noti = db.query(Notification).filter(Notification.id == notification_id).first()
-                        if noti:
-                            noti.retry_count = attempt
-                            noti.error_message = error_msg
-                            noti.message_body = rendered_body
-                            db.commit()
-                    finally:
-                        db.close()
-                
-                await asyncio.to_thread(mark_retry)
-                await asyncio.sleep(delay)
-                await self.enqueue(notification_id, priority=notification.priority.value, template_vars=template_vars, attempt=attempt + 1)
-            else:
-                def mark_failed():
-                    db = SessionLocal()
-                    try:
-                        noti = db.query(Notification).filter(Notification.id == notification_id).first()
-                        if noti:
-                            noti.status = NotificationStatus.FAILED
-                            noti.error_message = error_msg
-                            noti.retry_count = attempt
-                            noti.message_body = rendered_body
-                            db.commit()
-                    finally:
-                        db.close()
-                        
-                await asyncio.to_thread(mark_failed)
+            channel = noti.channel
+            rendered_body = self._render_template(noti.message_body, template_vars)
+
+            try:
+                provider = get_provider(channel)
+                await provider.send(user_id=noti.user_id, body=rendered_body)
+
+                # Mark success — re-fetch inside same session
+                noti.status = NotificationStatus.SENT
+                noti.sent_at = datetime.now(timezone.utc)
+                noti.retry_count = attempt - 1
+                noti.message_body = rendered_body
+                await db.commit()
+
+                logger.info(f"[{channel.upper()}] Delivered notification -> user={noti.user_id} on attempt {attempt}")
+
+            except Exception as e:
+                error_msg = str(e)
+                logger.warning(f"Failed to deliver: {error_msg} (Attempt {attempt})")
+
+                if attempt < 3:  # MAX_RETRIES
+                    delay = 1.0 * (2 ** (attempt - 1))
+                    noti.retry_count = attempt
+                    noti.error_message = error_msg
+                    noti.message_body = rendered_body
+                    await db.commit()
+
+                    await asyncio.sleep(delay)
+                    await self.enqueue(
+                        notification_id,
+                        priority=noti.priority.value,
+                        template_vars=template_vars,
+                        attempt=attempt + 1
+                    )
+                else:
+                    noti.status = NotificationStatus.FAILED
+                    noti.error_message = error_msg
+                    noti.retry_count = attempt
+                    noti.message_body = rendered_body
+                    await db.commit()
 
 notification_queue = NotificationQueue()

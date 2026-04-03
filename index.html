@@ -266,7 +266,16 @@
                     <div class="form-group" style="margin-bottom: 0;">
                         <input type="text" id="hist-user-id" value="user_web_123" placeholder="Target User ID">
                     </div>
-                    <button style="width: auto; padding: 0.8rem 2rem;" onclick="fetchHistory()">Poll Database Stream</button>
+                    <div class="form-group" style="margin-bottom: 0; flex: 0 0 80px;">
+                        <label>Page Size</label>
+                        <select id="hist-page-size">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <button style="width: auto; padding: 0.8rem 1.5rem;" onclick="fetchHistory(1)">Poll Stream</button>
                 </div>
 
                 <div class="table-container">
@@ -284,6 +293,15 @@
                             <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Hit Poll to sync telemetry.</td></tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; display: none;">
+                    <span id="pagination-info" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button id="btn-prev" style="width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;" class="secondary" onclick="changePage(-1)">← Prev</button>
+                        <button id="btn-next" style="width: auto; padding: 0.5rem 1rem; font-size: 0.9rem;" class="secondary" onclick="changePage(1)">Next →</button>
+                    </div>
                 </div>
             </div>
             
@@ -438,31 +456,39 @@
             }
         }
 
+        let _currentPage = 1;
+
+        function changePage(delta) {
+            _currentPage += delta;
+            fetchHistory(_currentPage);
+        }
+
         /* ----- ACTION: Refresh Live Tracking Table ----- */
-        async function fetchHistory() {
+        async function fetchHistory(page = 1) {
+            _currentPage = page;
             const tbody = document.getElementById('history-body');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Syncing...</td></tr>';
 
             try {
                 const userId = document.getElementById('hist-user-id').value;
-                const data = await apiCall(`${API_BASE}/notifications/user/${userId}`);
+                const pageSize = document.getElementById('hist-page-size').value;
+                const data = await apiCall(`${API_BASE}/notifications/user/${userId}?page=${page}&page_size=${pageSize}`);
                 
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No records mapped to this Identity node securely.</td></tr>';
+                if (data.total === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No records mapped to this Identity node.</td></tr>';
+                    document.getElementById('pagination-controls').style.display = 'none';
                     return;
                 }
 
                 tbody.innerHTML = '';
-                data.forEach(item => {
+                data.items.forEach(item => {
                     const tr = document.createElement('tr');
-                    
-                    // Logic to visually color components elegantly
                     const statClass = item.status.toLowerCase();
                     const statusHTML = `<span class="pill ${statClass}">${item.status}</span>`;
                     
                     let extra = "";
                     if (item.error_message) extra = `<div style="color:var(--danger); font-size:0.8rem; margin-top:4px;">Error: ${item.error_message}</div>`;
-                    if (item.retry_count > 0) extra += `<div style="color:var(--warning); font-size:0.8rem;">Retries Engaged: ${item.retry_count}</div>`;
+                    if (item.retry_count > 0) extra += `<div style="color:var(--warning); font-size:0.8rem;">Retries: ${item.retry_count}</div>`;
 
                     tr.innerHTML = `
                         <td style="font-weight: bold; color: var(--primary);">#${item.id}</td>
@@ -473,10 +499,20 @@
                     `;
                     tbody.appendChild(tr);
                 });
+
+                // Show pagination controls
+                const controls = document.getElementById('pagination-controls');
+                controls.style.display = 'flex';
+                document.getElementById('pagination-info').textContent = 
+                    `Page ${data.page} of ${data.total_pages}  ·  ${data.total} total record(s)`;
+                document.getElementById('btn-prev').disabled = !data.has_prev;
+                document.getElementById('btn-prev').style.opacity = data.has_prev ? '1' : '0.4';
+                document.getElementById('btn-next').disabled = !data.has_next;
+                document.getElementById('btn-next').style.opacity = data.has_next ? '1' : '0.4';
                 
-                showToast('Telemetry Map Flushed & Synced!');
+                showToast(`Page ${page}/${data.total_pages} — ${data.total} total records`);
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Disconnected: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">[X] Network Error: ${error.message}</td></tr>`;
             }
         }
 

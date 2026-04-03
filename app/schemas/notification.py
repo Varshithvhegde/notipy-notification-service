@@ -1,9 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
 from app.models.notification import NotificationStatus, NotificationPriority
-
-from typing import Optional, Literal, List
 
 ChannelType = Literal['email', 'sms', 'push']
 
@@ -31,3 +29,12 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PaginatedNotificationResponse(BaseModel):
+    items: List[NotificationResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool

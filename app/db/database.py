@@ -1,18 +1,25 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from dotenv import load_dotenv
 
-# Immediately load parameters from the local .env mapping file into Python's Native OS framework.
 load_dotenv()
 
-# Pull dynamic engine strings natively defaulting back to SQLite if Postgres is missing
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
+raw_url = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
 
-# Postgres explicitly strictly rejects `check_same_thread` configs designed for SQLite
-if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# Patch sync URL schemes to their async driver equivalents
+if "postgresql+asyncpg" in raw_url or "sqlite+aiosqlite" in raw_url:
+    # Already async-compatible (e.g. set by test conftest)
+    SQLALCHEMY_DATABASE_URL = raw_url
+elif raw_url.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = raw_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif raw_url.startswith("sqlite://"):
+    SQLALCHEMY_DATABASE_URL = raw_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    SQLALCHEMY_DATABASE_URL = raw_url
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+if "sqlite" in SQLALCHEMY_DATABASE_URL:
+    engine = create_async_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_async_engine(SQLALCHEMY_DATABASE_URL)
+
+SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession, expire_on_commit=False)

@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 # Basic In-Memory Rate Limiting for Demo Purposes
 # (In production, replace this with Redis-backed counters)
 _rate_limits = defaultdict(list)
+_rate_limit_store = _rate_limits  # Alias for test resets
 MAX_REQUESTS_PER_HOUR = 100
 ONE_HOUR = 3600
 

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 
 from app.api.dependencies import get_db
@@ -9,16 +10,18 @@ from app.schemas.user_preference import UserPreferenceCreate, UserPreferenceResp
 router = APIRouter()
 
 @router.post("/{user_id}/preferences", response_model=UserPreferenceResponse)
-def set_user_preference(
+async def set_user_preference(
     user_id: str, 
     preference: UserPreferenceCreate, 
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    # Check if preference already exists
-    pref = db.query(UserPreference).filter(
-        UserPreference.user_id == user_id, 
-        UserPreference.channel == preference.channel
-    ).first()
+    result = await db.execute(
+        select(UserPreference).where(
+            UserPreference.user_id == user_id,
+            UserPreference.channel == preference.channel
+        )
+    )
+    pref = result.scalars().first()
     
     if pref:
         pref.is_opted_in = preference.is_opted_in
@@ -30,11 +33,13 @@ def set_user_preference(
         )
         db.add(pref)
         
-    db.commit()
-    db.refresh(pref)
+    await db.commit()
+    await db.refresh(pref)
     return pref
 
 @router.get("/{user_id}/preferences", response_model=List[UserPreferenceResponse])
-def get_user_preferences(user_id: str, db: Session = Depends(get_db)):
-    prefs = db.query(UserPreference).filter(UserPreference.user_id == user_id).all()
-    return prefs
+async def get_user_preferences(user_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(UserPreference).where(UserPreference.user_id == user_id)
+    )
+    return result.scalars().all()
